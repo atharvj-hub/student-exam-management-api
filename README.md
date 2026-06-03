@@ -250,7 +250,7 @@ We maintain a roadmap for proposed enterprise enhancements. Check [docs/FUTURE_I
 ### 1. Active Swagger UI documentation
 ![Swagger UI](docs/ss/swagger-ui.png)
 
-### 2. Maven Build Test Suite Output (BUILD SUCCESS)
+### 2. Docker Container Deployment Verification
 ![Docker Containers](docs/ss/docker-running.png)
 
 ### 3. Python Regression Script output (48/48 PASS)
