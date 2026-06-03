@@ -1,0 +1,70 @@
+# ====================================================================
+# Maven Build Target Directories
+# ====================================================================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.releaseBackup
+pom.xml.restore
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ====================================================================
+# IDE Configurations (IntelliJ, VS Code, NetBeans, Eclipse)
+# ====================================================================
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+bin/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ====================================================================
+# Logs and Outputs
+# ====================================================================
+*.log
+logs/
+**/logs/
+temp/
+tmp/
+*.tmp
+*.temp
+
+# ====================================================================
+# Operating System Files
+# ====================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ====================================================================
+# Environment & Local Secrets
+# ====================================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+application-local.properties

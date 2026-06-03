@@ -1,0 +1,72 @@
+# ═══════════════════════════════════════════════════════════════════
+# docker-compose.yml — Orchestrates app + database containers
+# ═══════════════════════════════════════════════════════════════════
+#
+# Two containers:
+#   postgres  → PostgreSQL 15 database
+#   app       → Spring Boot application
+#
+# HOW Docker Compose networking works:
+#   Both containers are in the same Docker network "exam-network".
+#   Within this network, containers can reach each other by SERVICE NAME.
+#   app → connects to postgres:5432 (not localhost:5432)
+#   This is why application-docker.properties has:
+#     spring.datasource.url=jdbc:postgresql://postgres:5432/student_exam_db
+#
+# COMMAND TO RUN:
+#   docker-compose up --build    (build images + start containers)
+#   docker-compose up -d         (start in background)
+#   docker-compose down          (stop + remove containers)
+#   docker-compose down -v       (also removes the DB volume — WIPES DATA)
+#   docker-compose logs -f app   (follow app logs)
+
+services:
+
+  # ── PostgreSQL Database ────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: student-exam-postgres
+    environment:
+      POSTGRES_DB: student_exam_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"   # host:container — lets you connect from DBeaver/pgAdmin on your machine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # Persist data across container restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d student_exam_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - exam-network
+
+  # ── Spring Boot Application ────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: student-exam-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Activates application-docker.properties
+      SPRING_PROFILES_ACTIVE: docker
+      # Override datasource (redundant with docker profile but explicit)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/student_exam_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy   # Wait until PostgreSQL health check passes
+    networks:
+      - exam-network
+    restart: on-failure   # Restart if app crashes (e.g. during DB startup race)
+
+volumes:
+  postgres_data:   # Named volume — data persists even when containers are stopped
+
+networks:
+  exam-network:
+    driver: bridge

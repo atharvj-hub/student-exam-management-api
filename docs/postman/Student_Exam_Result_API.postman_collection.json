@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "Student Exam Result API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080"},
+    {"key": "studentId", "value": "1"},
+    {"key": "subjectId", "value": "1"},
+    {"key": "examId", "value": "1"},
+    {"key": "resultId", "value": "1"}
+  ],
+  "item": [
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "Create Student",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/students",
+            "body": {"mode": "raw", "raw": "{\"name\":\"Test Student\",\"email\":\"test@example.com\",\"rollNumber\":\"ROLL001\"}"}
+          }
+        },
+        {"name": "Get All Students", "request": {"method": "GET", "url": "{{baseUrl}}/api/students"}},
+        {"name": "Get Student", "request": {"method": "GET", "url": "{{baseUrl}}/api/students/{{studentId}}"}},
+        {
+          "name": "Update Student",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/students/{{studentId}}",
+            "body": {"mode": "raw", "raw": "{\"name\":\"Updated Student\",\"email\":\"updated@example.com\",\"rollNumber\":\"ROLL001\"}"}
+          }
+        },
+        {"name": "Delete Student", "request": {"method": "DELETE", "url": "{{baseUrl}}/api/students/{{studentId}}"}},
+        {
+          "name": "Validation - Missing Student Name",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/students",
+            "body": {"mode": "raw", "raw": "{\"email\":\"invalid-email\",\"rollNumber\":\"ROLL002\"}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subjects",
+      "item": [
+        {
+          "name": "Create Subject",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/subjects",
+            "body": {"mode": "raw", "raw": "{\"subjectName\":\"Mathematics\",\"subjectCode\":\"MATH101\",\"totalMarks\":100}"}
+          }
+        },
+        {"name": "Get All Subjects", "request": {"method": "GET", "url": "{{baseUrl}}/api/subjects"}},
+        {"name": "Get Subject", "request": {"method": "GET", "url": "{{baseUrl}}/api/subjects/{{subjectId}}"}},
+        {
+          "name": "Update Subject",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/subjects/{{subjectId}}",
+            "body": {"mode": "raw", "raw": "{\"subjectName\":\"Advanced Mathematics\",\"subjectCode\":\"MATH101\",\"totalMarks\":100}"}
+          }
+        },
+        {"name": "Delete Subject", "request": {"method": "DELETE", "url": "{{baseUrl}}/api/subjects/{{subjectId}}"}},
+        {
+          "name": "Validation - Invalid Total Marks",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/subjects",
+            "body": {"mode": "raw", "raw": "{\"subjectName\":\"Physics\",\"subjectCode\":\"PHY101\",\"totalMarks\":0}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exams",
+      "item": [
+        {
+          "name": "Create Exam",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/exams",
+            "body": {"mode": "raw", "raw": "{\"examName\":\"Final Exam\",\"subjectId\":{{subjectId}},\"examDate\":\"2026-06-03\"}"}
+          }
+        },
+        {"name": "Get All Exams", "request": {"method": "GET", "url": "{{baseUrl}}/api/exams"}},
+        {"name": "Get Exam", "request": {"method": "GET", "url": "{{baseUrl}}/api/exams/{{examId}}"}}
+      ]
+    },
+    {
+      "name": "Results",
+      "item": [
+        {
+          "name": "Create Result",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/results",
+            "body": {"mode": "raw", "raw": "{\"studentId\":{{studentId}},\"examId\":{{examId}},\"marks\":92}"}
+          }
+        },
+        {"name": "Get All Results", "request": {"method": "GET", "url": "{{baseUrl}}/api/results"}},
+        {
+          "name": "Update Result",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/results/{{resultId}}",
+            "body": {"mode": "raw", "raw": "{\"studentId\":{{studentId}},\"examId\":{{examId}},\"marks\":75}"}
+          }
+        },
+        {"name": "Get Results By Student", "request": {"method": "GET", "url": "{{baseUrl}}/api/results/student/{{studentId}}"}},
+        {
+          "name": "Business Rule - Duplicate Result",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/results",
+            "body": {"mode": "raw", "raw": "{\"studentId\":{{studentId}},\"examId\":{{examId}},\"marks\":92}"}
+          }
+        },
+        {
+          "name": "Business Rule - Marks Exceed Total",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/results",
+            "body": {"mode": "raw", "raw": "{\"studentId\":{{studentId}},\"examId\":{{examId}},\"marks\":150}"}
+          }
+        },
+        {
+          "name": "Validation - Negative Marks",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/results",
+            "body": {"mode": "raw", "raw": "{\"studentId\":{{studentId}},\"examId\":{{examId}},\"marks\":-1}"}
+          }
+        }
+      ]
+    }
+  ]
+}
