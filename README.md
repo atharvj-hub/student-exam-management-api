@@ -247,13 +247,11 @@ We maintain a roadmap for proposed enterprise enhancements. Check [docs/FUTURE_I
 
 ## 📸 Visual Placeholders & Screenshots
 
-> *Note: Before presenting this portfolio to recruiters, insert system execution screenshots below.*
-
 ### 1. Active Swagger UI documentation
-`[Insert Screenshot of Swagger Endpoint Reference UI here]`
+![Swagger UI](docs/ss/swagger-ui.png)
 
 ### 2. Maven Build Test Suite Output (BUILD SUCCESS)
-`[Insert Screenshot of Spring boot Maven test execution CLI here]`
+![Docker Containers](docs/ss/docker-running.png)
 
 ### 3. Python Regression Script output (48/48 PASS)
-`[Insert Screenshot of Python script CLI pass run here]`
+![Regression Tests](docs/ss/regression-tests.png)
