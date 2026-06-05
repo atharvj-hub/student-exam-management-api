@@ -40,14 +40,14 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
      *
      * Generated SQL:
      *   SELECT COUNT(*) > 0 FROM results WHERE student_id = ? AND exam_id = ?
+     *
+     * Note: existsByStudentIdAndExamIdAndIdNot has been intentionally removed.
+     * It was previously needed when ResultUpdateRequest carried studentId/examId,
+     * allowing a PUT to re-assign a result to a different student/exam.
+     * Now that ResultUpdateRequest only carries marks, the student-exam pair
+     * is immutable on update and no such guard is required.
      */
     boolean existsByStudentIdAndExamId(Long studentId, Long examId);
-
-    /**
-     * For update: same check but exclude current record.
-     * Allows re-recording a result (update) without triggering duplicate check on itself.
-     */
-    boolean existsByStudentIdAndExamIdAndIdNot(Long studentId, Long examId, Long id);
 
     /**
      * Fetch all results for a student — used in GET /api/results/student/{id}

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -97,6 +98,51 @@ class ResultControllerTest {
                     """))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.validationErrors.studentId").value("Student ID is required"));
+    }
+
+    @Test
+    void updateResultReturnsUpdatedResult() throws Exception {
+        when(resultService.updateResult(any(), any()))
+            .thenReturn(resultResponse(1L, 92.0, Grade.A_PLUS, ResultStatus.PASS));
+
+        mockMvc.perform(put("/api/results/1")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {"marks":92}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.percentage").value(92.0))
+            .andExpect(jsonPath("$.grade").value("A_PLUS"))
+            .andExpect(jsonPath("$.status").value("PASS"));
+    }
+
+    @Test
+    void updateWithNegativeMarksReturnsValidationFailure() throws Exception {
+        mockMvc.perform(put("/api/results/1")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {"marks":-5}
+                    """))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.validationErrors.marks").value("Marks cannot be negative"));
+    }
+
+    @Test
+    void updateIgnoresExtraUnknownFields() throws Exception {
+        // Sending studentId in the PUT body is a common mistake from API consumers.
+        // Jackson ignores unknown fields by default (FAIL_ON_UNKNOWN_PROPERTIES=false),
+        // so the operation should succeed as if studentId was not sent.
+        when(resultService.updateResult(any(), any()))
+            .thenReturn(resultResponse(1L, 85.0, Grade.A, ResultStatus.PASS));
+
+        mockMvc.perform(put("/api/results/1")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {"marks":85,"studentId":999}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1));
     }
 
     private ResultResponse resultResponse(Long id, Double percentage, Grade grade, ResultStatus status) {

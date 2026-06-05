@@ -71,7 +71,7 @@ public class Student {
     /**
      * @Column(nullable = false) → Adds NOT NULL at DB level.
      *   But this alone doesn't validate BEFORE hitting the DB.
-     *   API validation is handled by StudentRequest before service logic runs.
+     *   API validation is handled by StudentCreateRequest/StudentUpdateRequest before service logic runs.
      *   The entity keeps database integrity mapping only.
      */
     @Column(name = "name", nullable = false, length = 100)

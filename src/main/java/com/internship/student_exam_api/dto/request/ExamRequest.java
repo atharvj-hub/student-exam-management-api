@@ -11,7 +11,8 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ExamRequest {
+public class
+ExamRequest {
 
     @NotBlank(message = "Exam name is required")
     private String examName;

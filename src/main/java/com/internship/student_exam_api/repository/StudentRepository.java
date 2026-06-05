@@ -62,12 +62,14 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * For update validation: check if another student (not the one being updated)
      * already has this email.
      *
-     *   findByEmailAndIdNot(email, id)
-     *   → SELECT * FROM students WHERE email = ? AND id != ?
+     *   existsByEmailAndIdNot(email, id)
+     *   → SELECT COUNT(*) FROM students WHERE email = ? AND id != ?
      *
      * This prevents false duplicate detection when updating a student's own email.
      * Without this: updating student#1 with their SAME email would trigger duplicate error.
+     *
+     * Note: existsByRollNumberAndIdNot has been intentionally removed because rollNumber
+     * is now immutable after creation and cannot be changed via the update endpoint.
      */
     boolean existsByEmailAndIdNot(String email, Long id);
-    boolean existsByRollNumberAndIdNot(String rollNumber, Long id);
 }

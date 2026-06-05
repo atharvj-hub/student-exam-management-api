@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.service;
 
-import com.internship.student_exam_api.dto.request.StudentRequest;
+import com.internship.student_exam_api.dto.request.StudentCreateRequest;
+import com.internship.student_exam_api.dto.request.StudentUpdateRequest;
 import com.internship.student_exam_api.dto.response.StudentResponse;
 import com.internship.student_exam_api.entity.Student;
 import com.internship.student_exam_api.exception.DuplicateResourceException;
@@ -77,7 +78,7 @@ public class StudentService {
      *   No partial state in DB.
      */
     @Transactional
-    public StudentResponse createStudent(StudentRequest request) {
+    public StudentResponse createStudent(StudentCreateRequest request) {
         log.info("Creating student with email: {}", request.getEmail());
 
         // Business rule: email must be unique
@@ -137,28 +138,28 @@ public class StudentService {
     // ════════════════════════════════════════════════════════════
 
     /**
-     * Update existing student.
+     * Update existing student — only mutable fields (name, email).
+     *
+     * rollNumber is intentionally NOT updated here because it is a natural
+     * enrollment key. Once assigned, it must not change; doing so would break
+     * external systems that reference roll numbers as identifiers.
+     * To change a rollNumber, the record must be deleted and re-created.
      *
      * DIRTY CHECKING — how updates work without calling save():
      *   1. findStudentOrThrow() fetches the entity → it's now MANAGED
      *   2. We call setters on the MANAGED entity
      *   3. @Transactional commit → Hibernate detects changed fields → runs UPDATE SQL
-     *   4. No explicit save() needed
+     *   4. No explicit save() needed (but we call it for clarity — safe to do).
      *
-     * BUT we call save() here anyway because:
-     *   It makes the code explicit and readable.
-     *   "save() on a managed entity" = merge() = safe, not a double-write.
-     *   It returns the updated entity (useful for the response mapping).
-     *
-     * WHY check AndIdNot for uniqueness on UPDATE?
+     * WHY check existsByEmailAndIdNot?
      *   Student #1 has email = "atharv@gmail.com"
      *   If they update and keep the same email:
-     *     existsByEmail("atharv@gmail.com") → true → throws 409 WRONG!
+     *     existsByEmail("atharv@gmail.com") → true → throws 409 — WRONG.
      *   existsByEmailAndIdNot("atharv@gmail.com", 1L) → false → correct.
      *   "Does this email exist on ANY student other than the one I'm updating?"
      */
     @Transactional
-    public StudentResponse updateStudent(Long id, StudentRequest request) {
+    public StudentResponse updateStudent(Long id, StudentUpdateRequest request) {
         log.info("Updating student with id: {}", id);
 
         Student student = findStudentOrThrow(id);
@@ -168,14 +169,9 @@ public class StudentService {
             throw new DuplicateResourceException("Student", "email", request.getEmail());
         }
 
-        if (studentRepository.existsByRollNumberAndIdNot(request.getRollNumber(), id)) {
-            throw new DuplicateResourceException("Student", "rollNumber", request.getRollNumber());
-        }
-
-        // Update the managed entity's fields
+        // Only mutable fields are updated — rollNumber is immutable post-creation
         student.setName(request.getName());
         student.setEmail(request.getEmail());
-        student.setRollNumber(request.getRollNumber());
 
         // Hibernate dirty checking would auto-save on commit, but explicit save is clearer
         Student updated = studentRepository.save(student);
