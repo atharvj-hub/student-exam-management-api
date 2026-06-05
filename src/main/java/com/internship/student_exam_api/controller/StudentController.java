@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.controller;
 
-import com.internship.student_exam_api.dto.request.StudentRequest;
+import com.internship.student_exam_api.dto.request.StudentCreateRequest;
+import com.internship.student_exam_api.dto.request.StudentUpdateRequest;
 import com.internship.student_exam_api.dto.response.StudentResponse;
 import com.internship.student_exam_api.service.StudentService;
 import jakarta.validation.Valid;
@@ -39,9 +40,9 @@ import java.util.List;
  *   1. Tomcat receives TCP bytes on port 8080
  *   2. DispatcherServlet receives the parsed HTTP request
  *   3. HandlerMapping: "which method handles POST /api/students?" → createStudent()
- *   4. @Valid fires: checks @NotBlank, @Email on StudentRequest
+ *   4. @Valid fires: checks @NotBlank, @Email on StudentCreateRequest
  *      If fails → MethodArgumentNotValidException → GlobalExceptionHandler → 422
- *   5. @RequestBody: Jackson reads JSON body → StudentRequest object
+ *   5. @RequestBody: Jackson reads JSON body → StudentCreateRequest object
  *   6. createStudent(request) called
  *   7. StudentService.createStudent() runs
  *   8. Returns StudentResponse
@@ -68,11 +69,11 @@ public class StudentController {
      * POST /api/students
      * Creates a new student.
      *
-     * @Valid → triggers validation on StudentRequest BEFORE calling the service.
+     * @Valid → triggers validation on StudentCreateRequest BEFORE calling the service.
      *   If name is blank → 422 response, service is never called.
      *
-     * @RequestBody → Jackson deserializes the JSON body into StudentRequest.
-     *   Without @RequestBody → StudentRequest is null → NullPointerException in service.
+     * @RequestBody → Jackson deserializes the JSON body into StudentCreateRequest.
+     *   Without @RequestBody → StudentCreateRequest is null → NullPointerException in service.
      *
      * ResponseEntity.status(HttpStatus.CREATED).body(response):
      *   Returns HTTP 201 (not 200) because 201 = "resource was created".
@@ -80,7 +81,7 @@ public class StudentController {
      *   201 = "a new resource was successfully created" (used for POST).
      */
     @PostMapping
-    public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody StudentRequest request) {
+    public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody StudentCreateRequest request) {
         log.info("POST /api/students");
         StudentResponse response = studentService.createStudent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -120,7 +121,7 @@ public class StudentController {
     @PutMapping("/{id}")
     public ResponseEntity<StudentResponse> updateStudent(
             @PathVariable Long id,
-            @Valid @RequestBody StudentRequest request) {
+            @Valid @RequestBody StudentUpdateRequest request) {
         log.info("PUT /api/students/{}", id);
         return ResponseEntity.ok(studentService.updateStudent(id, request));
     }

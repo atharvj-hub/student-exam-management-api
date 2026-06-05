@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SubjectRequest {
+public class SubjectCreateRequest {
 
     @NotBlank(message = "Subject name is required")
     private String subjectName;

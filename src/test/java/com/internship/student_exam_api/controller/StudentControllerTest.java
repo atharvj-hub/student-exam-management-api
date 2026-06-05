@@ -72,7 +72,7 @@ class StudentControllerTest {
         mockMvc.perform(put("/api/students/1")
                 .contentType(APPLICATION_JSON)
                 .content("""
-                    {"name":"Test Student","email":"test@example.com","rollNumber":"ROLL001"}
+                    {"name":"Test Student","email":"test@example.com"}
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(1));

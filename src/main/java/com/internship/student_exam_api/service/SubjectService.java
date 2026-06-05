@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.service;
 
-import com.internship.student_exam_api.dto.request.SubjectRequest;
+import com.internship.student_exam_api.dto.request.SubjectCreateRequest;
+import com.internship.student_exam_api.dto.request.SubjectUpdateRequest;
 import com.internship.student_exam_api.dto.response.SubjectResponse;
 import com.internship.student_exam_api.entity.Subject;
 import com.internship.student_exam_api.exception.DuplicateResourceException;
@@ -24,7 +25,7 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponse createSubject(SubjectRequest request) {
+    public SubjectResponse createSubject(SubjectCreateRequest request) {
         log.info("Creating subject with code: {}", request.getSubjectCode());
 
         if (subjectRepository.existsBySubjectCode(request.getSubjectCode())) {
@@ -56,7 +57,7 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponse updateSubject(Long id, SubjectRequest request) {
+    public SubjectResponse updateSubject(Long id, SubjectUpdateRequest request) {
         log.info("Updating subject with id: {}", id);
         Subject subject = findSubjectOrThrow(id);
 

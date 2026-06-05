@@ -6,6 +6,7 @@ import com.internship.student_exam_api.entity.Student;
 import com.internship.student_exam_api.entity.Subject;
 import com.internship.student_exam_api.enums.Grade;
 import com.internship.student_exam_api.enums.ResultStatus;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -57,18 +58,32 @@ class ResultRepositoryTest {
         assertThat(result.getStudent().getRollNumber()).isEqualTo("ROLL001");
         assertThat(result.getExam().getExamName()).isEqualTo("Final Exam");
         assertThat(result.getExam().getSubject().getSubjectName()).isEqualTo("Mathematics");
+
+        // Guard: assert the full object graph was eagerly loaded by the JOIN FETCH query.
+        // If someone removes a JOIN FETCH from findByIdWithDetails(), this will fail before
+        // a LazyInitializationException can silently corrupt production data.
+        assertThat(Hibernate.isInitialized(result.getStudent()))
+            .as("Student must be eagerly initialized by JOIN FETCH")
+            .isTrue();
+        assertThat(Hibernate.isInitialized(result.getExam()))
+            .as("Exam must be eagerly initialized by JOIN FETCH")
+            .isTrue();
+        assertThat(Hibernate.isInitialized(result.getExam().getSubject()))
+            .as("Subject must be eagerly initialized by JOIN FETCH")
+            .isTrue();
     }
 
     @Test
-    void existenceChecksSupportCreateAndUpdateDuplicateRules() {
+    void existenceCheckSupportsDuplicateResultGuard() {
         Student student = persistStudent("Test Student", "test@example.com", "ROLL001");
         Exam exam = persistExam();
-        Result result = persistResult(student, exam, 82.0, Grade.A);
+        persistResult(student, exam, 82.0, Grade.A);
         entityManager.flush();
 
+        // After saving a result, the student+exam pair must be detected as already existing
         assertThat(resultRepository.existsByStudentIdAndExamId(student.getId(), exam.getId())).isTrue();
-        assertThat(resultRepository.existsByStudentIdAndExamIdAndIdNot(student.getId(), exam.getId(), result.getId())).isFalse();
-        assertThat(resultRepository.existsByStudentIdAndExamIdAndIdNot(student.getId(), exam.getId(), 999L)).isTrue();
+        // A different student+exam pair must NOT be detected as existing
+        assertThat(resultRepository.existsByStudentIdAndExamId(999L, exam.getId())).isFalse();
     }
 
     private Student persistStudent(String name, String email, String rollNumber) {

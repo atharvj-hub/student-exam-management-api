@@ -92,4 +92,24 @@ public class Exam {
         this.subject = subject;
         this.examDate = examDate;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getExamName() {
+        return examName;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public LocalDate getExamDate() {
+        return examDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }

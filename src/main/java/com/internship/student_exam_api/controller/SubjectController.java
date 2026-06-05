@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.controller;
 
-import com.internship.student_exam_api.dto.request.SubjectRequest;
+import com.internship.student_exam_api.dto.request.SubjectCreateRequest;
+import com.internship.student_exam_api.dto.request.SubjectUpdateRequest;
 import com.internship.student_exam_api.dto.response.SubjectResponse;
 import com.internship.student_exam_api.service.SubjectService;
 import jakarta.validation.Valid;
@@ -23,7 +24,7 @@ public class SubjectController {
     }
 
     @PostMapping
-    public ResponseEntity<SubjectResponse> createSubject(@Valid @RequestBody SubjectRequest request) {
+    public ResponseEntity<SubjectResponse> createSubject(@Valid @RequestBody SubjectCreateRequest request) {
         log.info("POST /api/subjects");
         return ResponseEntity.status(HttpStatus.CREATED).body(subjectService.createSubject(request));
     }
@@ -43,7 +44,7 @@ public class SubjectController {
     @PutMapping("/{id}")
     public ResponseEntity<SubjectResponse> updateSubject(
             @PathVariable Long id,
-            @Valid @RequestBody SubjectRequest request) {
+            @Valid @RequestBody SubjectUpdateRequest request) {
         log.info("PUT /api/subjects/{}", id);
         return ResponseEntity.ok(subjectService.updateSubject(id, request));
     }

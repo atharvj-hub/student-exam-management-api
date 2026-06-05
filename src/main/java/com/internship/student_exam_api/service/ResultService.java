@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.service;
 
-import com.internship.student_exam_api.dto.request.ResultRequest;
+import com.internship.student_exam_api.dto.request.ResultCreateRequest;
+import com.internship.student_exam_api.dto.request.ResultUpdateRequest;
 import com.internship.student_exam_api.dto.response.ResultResponse;
 import com.internship.student_exam_api.entity.Exam;
 import com.internship.student_exam_api.entity.Result;
@@ -63,7 +64,7 @@ public class ResultService {
     // ════════════════════════════════════════════════════════════
 
     @Transactional
-    public ResultResponse createResult(ResultRequest request) {
+    public ResultResponse createResult(ResultCreateRequest request) {
         log.info("Recording result for studentId: {}, examId: {}",
             request.getStudentId(), request.getExamId());
 
@@ -145,26 +146,13 @@ public class ResultService {
     // ════════════════════════════════════════════════════════════
 
     @Transactional
-    public ResultResponse updateResult(Long id, ResultRequest request) {
+    public ResultResponse updateResult(Long id, ResultUpdateRequest request) {
         log.info("Updating result with id: {}", id);
 
         Result result = resultRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Result", id));
 
-        // Validate new student/exam references
-        Student student = studentService.findStudentOrThrow(request.getStudentId());
-        Exam exam = examService.findExamOrThrow(request.getExamId());
-
-        // Check if new student+exam combination is taken by a DIFFERENT result
-        if (resultRepository.existsByStudentIdAndExamIdAndIdNot(
-                request.getStudentId(), request.getExamId(), id)) {
-            throw new BusinessRuleException(
-                "Another result already exists for student id: " + request.getStudentId() +
-                " and exam id: " + request.getExamId()
-            );
-        }
-
-        double totalMarks = exam.getSubject().getTotalMarks();
+        double totalMarks = result.getExam().getSubject().getTotalMarks();
         if (request.getMarks() > totalMarks) {
             throw new BusinessRuleException(
                 "Marks (" + request.getMarks() + ") cannot exceed total marks (" + totalMarks + ")"
@@ -176,8 +164,6 @@ public class ResultService {
         Grade grade = calculateGrade(percentage);
         ResultStatus status = calculateStatus(percentage);
 
-        result.setStudent(student);
-        result.setExam(exam);
         result.setMarks(request.getMarks());
         result.setPercentage(percentage);
         result.setGrade(grade);

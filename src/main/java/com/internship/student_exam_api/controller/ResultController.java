@@ -1,6 +1,7 @@
 package com.internship.student_exam_api.controller;
 
-import com.internship.student_exam_api.dto.request.ResultRequest;
+import com.internship.student_exam_api.dto.request.ResultCreateRequest;
+import com.internship.student_exam_api.dto.request.ResultUpdateRequest;
 import com.internship.student_exam_api.dto.response.ResultResponse;
 import com.internship.student_exam_api.service.ResultService;
 import jakarta.validation.Valid;
@@ -41,7 +42,7 @@ public class ResultController {
     }
 
     @PostMapping
-    public ResponseEntity<ResultResponse> createResult(@Valid @RequestBody ResultRequest request) {
+    public ResponseEntity<ResultResponse> createResult(@Valid @RequestBody ResultCreateRequest request) {
         log.info("POST /api/results");
         return ResponseEntity.status(HttpStatus.CREATED).body(resultService.createResult(request));
     }
@@ -55,7 +56,7 @@ public class ResultController {
     @PutMapping("/{id}")
     public ResponseEntity<ResultResponse> updateResult(
             @PathVariable Long id,
-            @Valid @RequestBody ResultRequest request) {
+            @Valid @RequestBody ResultUpdateRequest request) {
         log.info("PUT /api/results/{}", id);
         return ResponseEntity.ok(resultService.updateResult(id, request));
     }
