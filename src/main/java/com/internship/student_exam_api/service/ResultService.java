@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +48,13 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ResultService {
+
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    private static final BigDecimal A_PLUS_THRESHOLD = BigDecimal.valueOf(90);
+    private static final BigDecimal A_THRESHOLD = BigDecimal.valueOf(75);
+    private static final BigDecimal B_THRESHOLD = BigDecimal.valueOf(60);
+    private static final BigDecimal C_THRESHOLD = BigDecimal.valueOf(35);
+    private static final BigDecimal PASS_THRESHOLD = BigDecimal.valueOf(40);
 
     private final ResultRepository resultRepository;
     private final StudentService studentService;
@@ -83,15 +92,15 @@ public class ResultService {
         }
 
         // 4. Business rule: marks cannot exceed totalMarks
-        double totalMarks = exam.getSubject().getTotalMarks();
-        if (request.getMarks() > totalMarks) {
+        BigDecimal totalMarks = BigDecimal.valueOf(exam.getSubject().getTotalMarks());
+        if (request.getMarks().compareTo(totalMarks) > 0) {
             throw new BusinessRuleException(
                 "Marks (" + request.getMarks() + ") cannot exceed total marks (" + totalMarks + ")"
             );
         }
 
         // 5. Auto-calculate percentage, grade, status
-        double percentage = calculatePercentage(request.getMarks(), totalMarks);
+        BigDecimal percentage = calculatePercentage(request.getMarks(), totalMarks);
         Grade grade = calculateGrade(percentage);
         ResultStatus status = calculateStatus(percentage);
 
@@ -152,15 +161,15 @@ public class ResultService {
         Result result = resultRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Result", id));
 
-        double totalMarks = result.getExam().getSubject().getTotalMarks();
-        if (request.getMarks() > totalMarks) {
+        BigDecimal totalMarks = BigDecimal.valueOf(result.getExam().getSubject().getTotalMarks());
+        if (request.getMarks().compareTo(totalMarks) > 0) {
             throw new BusinessRuleException(
                 "Marks (" + request.getMarks() + ") cannot exceed total marks (" + totalMarks + ")"
             );
         }
 
         // Recalculate everything
-        double percentage = calculatePercentage(request.getMarks(), totalMarks);
+        BigDecimal percentage = calculatePercentage(request.getMarks(), totalMarks);
         Grade grade = calculateGrade(percentage);
         ResultStatus status = calculateStatus(percentage);
 
@@ -178,19 +187,19 @@ public class ResultService {
 
     /**
      * percentage = (marks / totalMarks) * 100
-     * Rounded to 2 decimal places.
+     * Rounded to 2 decimal places using HALF_UP.
      *
-     * WHY Math.round(... * 100.0) / 100.0?
-     *   (75.0 / 100.0) * 100 = 75.000000000001 (floating point imprecision)
-     *   We round to 2 decimal places for clean output.
+     * WHY BigDecimal?
+     *   (75.0 / 100.0) * 100 using doubles can yield 75.000000000001 (floating point imprecision)
+     *   BigDecimal keeps precise decimal math for academic calculations.
      *
      * EDGE CASE: totalMarks = 0 would cause division by zero.
      *   Prevented at entity level: @Min(1) on Subject.totalMarks.
      *   Defense-in-depth: also caught by DB constraint.
      */
-    double calculatePercentage(double marks, double totalMarks) {
-        double raw = (marks / totalMarks) * 100.0;
-        return Math.round(raw * 100.0) / 100.0;
+    BigDecimal calculatePercentage(BigDecimal marks, BigDecimal totalMarks) {
+        return marks.multiply(HUNDRED)
+            .divide(totalMarks, 2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -205,11 +214,11 @@ public class ResultService {
      * Enum return type means no invalid grade can ever be returned.
      * If you add a new grade tier, the compiler forces you to handle it.
      */
-    Grade calculateGrade(double percentage) {
-        if (percentage >= 90.0) return Grade.A_PLUS;
-        if (percentage >= 75.0) return Grade.A;
-        if (percentage >= 60.0) return Grade.B;
-        if (percentage >= 35.0) return Grade.C;
+    Grade calculateGrade(BigDecimal percentage) {
+        if (percentage.compareTo(A_PLUS_THRESHOLD) >= 0) return Grade.A_PLUS;
+        if (percentage.compareTo(A_THRESHOLD) >= 0) return Grade.A;
+        if (percentage.compareTo(B_THRESHOLD) >= 0) return Grade.B;
+        if (percentage.compareTo(C_THRESHOLD) >= 0) return Grade.C;
         return Grade.FAIL;
     }
 
@@ -223,8 +232,8 @@ public class ResultService {
      *   A student can have Grade.C (35-39%) and FAIL (if < 40%)
      *   A student can have Grade.FAIL (<35%) and FAIL (always)
      */
-    ResultStatus calculateStatus(double percentage) {
-        return percentage >= 40.0 ? ResultStatus.PASS : ResultStatus.FAIL;
+    ResultStatus calculateStatus(BigDecimal percentage) {
+        return percentage.compareTo(PASS_THRESHOLD) >= 0 ? ResultStatus.PASS : ResultStatus.FAIL;
     }
 
     // ════════════════════════════════════════════════════════════

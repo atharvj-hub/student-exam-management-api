@@ -5,6 +5,8 @@ import com.internship.student_exam_api.enums.ResultStatus;
 import com.internship.student_exam_api.enums.Grade;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ResultServiceTest {
@@ -15,7 +17,7 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        Grade grade = resultService.calculateGrade(95.0);
+        Grade grade = resultService.calculateGrade(new BigDecimal("95"));
 
         assertEquals(Grade.A_PLUS, grade);
     }
@@ -25,7 +27,7 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        Grade grade = resultService.calculateGrade(75.0);
+        Grade grade = resultService.calculateGrade(new BigDecimal("75"));
 
         assertEquals(Grade.A, grade);
     }
@@ -35,7 +37,7 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        Grade grade = resultService.calculateGrade(60.0);
+        Grade grade = resultService.calculateGrade(new BigDecimal("60"));
 
         assertEquals(Grade.B, grade);
     }
@@ -45,7 +47,7 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        Grade grade = resultService.calculateGrade(35.0);
+        Grade grade = resultService.calculateGrade(new BigDecimal("35"));
 
         assertEquals(Grade.C, grade);
     }
@@ -55,7 +57,7 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        Grade grade = resultService.calculateGrade(34.99);
+        Grade grade = resultService.calculateGrade(new BigDecimal("34.99"));
 
         assertEquals(Grade.FAIL, grade);
     }
@@ -66,7 +68,7 @@ class ResultServiceTest {
                 new ResultService(null, null, null);
 
         ResultStatus status =
-                resultService.calculateStatus(40.0);
+                resultService.calculateStatus(new BigDecimal("40"));
 
         assertEquals(ResultStatus.PASS, status);
     }
@@ -78,7 +80,7 @@ class ResultServiceTest {
                 new ResultService(null, null, null);
 
         ResultStatus status =
-                resultService.calculateStatus(39.99);
+                resultService.calculateStatus(new BigDecimal("39.99"));
 
         assertEquals(ResultStatus.FAIL, status);
     }
@@ -88,10 +90,10 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        double percentage =
-                resultService.calculatePercentage(75, 100);
+        BigDecimal percentage =
+                resultService.calculatePercentage(new BigDecimal("75"), new BigDecimal("100"));
 
-        assertEquals(75.0, percentage);
+        assertEquals(new BigDecimal("75.00"), percentage);
     }
 
     @Test
@@ -100,10 +102,10 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        double percentage =
-                resultService.calculatePercentage(95, 100);
+        BigDecimal percentage =
+                resultService.calculatePercentage(new BigDecimal("95"), new BigDecimal("100"));
 
-        assertEquals(95.0, percentage);
+        assertEquals(new BigDecimal("95.00"), percentage);
     }
 
     @Test
@@ -112,9 +114,9 @@ class ResultServiceTest {
         ResultService resultService =
                 new ResultService(null, null, null);
 
-        double percentage =
-                resultService.calculatePercentage(1, 3);
+        BigDecimal percentage =
+                resultService.calculatePercentage(new BigDecimal("1"), new BigDecimal("3"));
 
-        assertEquals(33.33, percentage);
+        assertEquals(new BigDecimal("33.33"), percentage);
     }
 }

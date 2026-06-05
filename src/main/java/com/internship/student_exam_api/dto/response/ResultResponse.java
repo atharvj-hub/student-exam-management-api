@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -26,8 +27,8 @@ public class ResultResponse {
     private StudentResponse student;
     private ExamResponse exam;
 
-    private Double marks;
-    private Double percentage;
+    private BigDecimal marks;
+    private BigDecimal percentage;
     private Grade grade;
     private ResultStatus status;
 

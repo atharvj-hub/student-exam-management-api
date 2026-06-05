@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -37,7 +38,8 @@ class ResultControllerTest {
 
     @Test
     void createResultReturnsCalculatedResult() throws Exception {
-        when(resultService.createResult(any())).thenReturn(resultResponse(1L, 92.0, Grade.A_PLUS, ResultStatus.PASS));
+        when(resultService.createResult(any()))
+            .thenReturn(resultResponse(1L, new BigDecimal("92.00"), Grade.A_PLUS, ResultStatus.PASS));
 
         mockMvc.perform(post("/api/results")
                 .contentType(APPLICATION_JSON)
@@ -80,7 +82,7 @@ class ResultControllerTest {
     @Test
     void getByStudentReturnsStudentResults() throws Exception {
         when(resultService.getResultsByStudent(1L))
-            .thenReturn(List.of(resultResponse(1L, 88.0, Grade.A, ResultStatus.PASS)));
+            .thenReturn(List.of(resultResponse(1L, new BigDecimal("88.00"), Grade.A, ResultStatus.PASS)));
 
         mockMvc.perform(get("/api/results/student/1"))
             .andExpect(status().isOk())
@@ -103,7 +105,7 @@ class ResultControllerTest {
     @Test
     void updateResultReturnsUpdatedResult() throws Exception {
         when(resultService.updateResult(any(), any()))
-            .thenReturn(resultResponse(1L, 92.0, Grade.A_PLUS, ResultStatus.PASS));
+            .thenReturn(resultResponse(1L, new BigDecimal("92.00"), Grade.A_PLUS, ResultStatus.PASS));
 
         mockMvc.perform(put("/api/results/1")
                 .contentType(APPLICATION_JSON)
@@ -134,7 +136,7 @@ class ResultControllerTest {
         // Jackson ignores unknown fields by default (FAIL_ON_UNKNOWN_PROPERTIES=false),
         // so the operation should succeed as if studentId was not sent.
         when(resultService.updateResult(any(), any()))
-            .thenReturn(resultResponse(1L, 85.0, Grade.A, ResultStatus.PASS));
+            .thenReturn(resultResponse(1L, new BigDecimal("85.00"), Grade.A, ResultStatus.PASS));
 
         mockMvc.perform(put("/api/results/1")
                 .contentType(APPLICATION_JSON)
@@ -145,7 +147,7 @@ class ResultControllerTest {
             .andExpect(jsonPath("$.id").value(1));
     }
 
-    private ResultResponse resultResponse(Long id, Double percentage, Grade grade, ResultStatus status) {
+    private ResultResponse resultResponse(Long id, BigDecimal percentage, Grade grade, ResultStatus status) {
         return ResultResponse.builder()
             .id(id)
             .student(StudentResponse.builder()
