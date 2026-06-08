@@ -2,11 +2,14 @@ package com.internship.student_exam_api.controller;
 
 import com.internship.student_exam_api.dto.response.StudentResponse;
 import com.internship.student_exam_api.exception.ResourceNotFoundException;
+import com.internship.student_exam_api.security.JwtUtil;
+import com.internship.student_exam_api.security.UserDetailsServiceImpl;
 import com.internship.student_exam_api.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -15,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,19 +27,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(StudentController.class)
+@WithMockUser(roles = "ADMIN")
 class StudentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    /** Mock JwtUtil to satisfy JwtAuthFilter constructor injection in @WebMvcTest slice. */
+    @MockBean
+    private JwtUtil jwtUtil;
+
+    /** Mock UserDetailsServiceImpl to satisfy JwtAuthFilter constructor injection in @WebMvcTest slice. */
+    @MockBean
+    private UserDetailsServiceImpl userDetailsService;
+
     @MockBean
     private StudentService studentService;
+
 
     @Test
     void createStudentReturnsCreatedStudent() throws Exception {
         when(studentService.createStudent(any())).thenReturn(studentResponse(1L));
 
         mockMvc.perform(post("/api/students")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"name":"Test Student","email":"test@example.com","rollNumber":"ROLL001"}
@@ -70,6 +85,7 @@ class StudentControllerTest {
         when(studentService.updateStudent(any(), any())).thenReturn(studentResponse(1L));
 
         mockMvc.perform(put("/api/students/1")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"name":"Test Student","email":"test@example.com"}
@@ -82,13 +98,14 @@ class StudentControllerTest {
     void deleteStudentReturnsNoContent() throws Exception {
         doNothing().when(studentService).deleteStudent(1L);
 
-        mockMvc.perform(delete("/api/students/1"))
+        mockMvc.perform(delete("/api/students/1").with(csrf()))
             .andExpect(status().isNoContent());
     }
 
     @Test
     void validationFailureReturnsUnprocessableEntity() throws Exception {
         mockMvc.perform(post("/api/students")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"email":"not-an-email","rollNumber":"ROLL001"}

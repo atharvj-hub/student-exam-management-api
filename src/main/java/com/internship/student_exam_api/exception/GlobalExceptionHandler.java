@@ -4,6 +4,8 @@ import com.internship.student_exam_api.dto.response.ApiErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,31 +20,9 @@ import java.util.Map;
  * @RestControllerAdvice — Global Exception Interceptor
  * ═══════════════════════════════════════════════════════════════
  *
- * WITHOUT this class:
- *   An unhandled RuntimeException propagates through:
- *     Service → Controller → DispatcherServlet → Spring's DefaultHandlerExceptionResolver
- *   Result: HTTP 500 with a Java stack trace in the response body.
- *   Stack traces leak internal info. They're a security risk. They're ugly.
- *
- * WITH this class:
- *   Any exception thrown anywhere in any @Controller or @Service
- *   is intercepted HERE, matched to the correct @ExceptionHandler method,
- *   and returns a clean, structured JSON error response.
- *
- * HOW Spring routes exceptions here:
- *   @RestControllerAdvice = @ControllerAdvice + @ResponseBody
- *   Spring's HandlerExceptionResolver checks ALL @ExceptionHandler methods
- *   in this class and finds the most specific match for the thrown exception.
- *   If thrown exception = ResourceNotFoundException → handleResourceNotFound fires.
- *   If thrown exception = SomethingElse (no specific handler) → handleGenericException fires.
- *
- * PRIORITY:
- *   More specific handler wins:
- *   ResourceNotFoundException extends RuntimeException.
- *   If both handlers exist, Spring picks ResourceNotFoundException handler (more specific).
- *
- * @Slf4j → Lombok generates a `log` field: private static final Logger log = ...
- *   Lets you do: log.error("...", e) without any boilerplate.
+ * Any exception thrown anywhere in any @Controller or @Service
+ * is intercepted HERE, matched to the correct @ExceptionHandler method,
+ * and returns a clean, structured JSON error response.
  */
 @RestControllerAdvice
 @Slf4j
@@ -90,31 +70,41 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ─── 401 Unauthorized — Bad Credentials ──────────────────────────────────────
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Authentication failed: bad credentials");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            ApiErrorResponse.builder()
+                .status(401)
+                .error("UNAUTHORIZED")
+                .message("Invalid email or password")
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
+    // ─── 403 Forbidden — Insufficient Role ────────────────────────────────────────
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ApiErrorResponse.builder()
+                .status(403)
+                .error("FORBIDDEN")
+                .message("You do not have permission to perform this action")
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
     /**
      * ─── 422 Unprocessable Entity — @Valid Validation Failure ───────────────
-     *
-     * Thrown automatically by Spring when @Valid fails on a @RequestBody.
-     * Contains a list of field-level errors.
-     *
-     * Example response:
-     * {
-     *   "status": 422,
-     *   "error": "VALIDATION_FAILED",
-     *   "message": "Validation failed",
-     *   "validationErrors": {
-     *     "name": "Name is required",
-     *     "email": "Invalid email format"
-     *   }
-     * }
-     *
-     * MethodArgumentNotValidException.getBindingResult().getFieldErrors()
-     * returns all failed fields. We collect them into a Map<fieldName, errorMessage>.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> validationErrors = new HashMap<>();
 
-        // Each FieldError represents one failed @NotBlank / @Email / etc.
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             validationErrors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
@@ -133,14 +123,9 @@ public class GlobalExceptionHandler {
 
     /**
      * ─── 500 Internal Server Error — Catch-All ───────────────────────────────
-     *
-     * Catches any unhandled exception.
-     * We log the full stack trace here (log.error includes the exception).
-     * We return a generic message to the client — never expose internal details.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
-        // Log the full stack trace for debugging — but DON'T send it to client
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ApiErrorResponse.builder()

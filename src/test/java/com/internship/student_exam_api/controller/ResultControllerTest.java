@@ -7,11 +7,14 @@ import com.internship.student_exam_api.dto.response.SubjectResponse;
 import com.internship.student_exam_api.enums.Grade;
 import com.internship.student_exam_api.enums.ResultStatus;
 import com.internship.student_exam_api.exception.BusinessRuleException;
+import com.internship.student_exam_api.security.JwtUtil;
+import com.internship.student_exam_api.security.UserDetailsServiceImpl;
 import com.internship.student_exam_api.service.ResultService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -20,6 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -27,19 +31,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ResultController.class)
+@WithMockUser(roles = "ADMIN")
 class ResultControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    /** Mock JwtUtil to satisfy JwtAuthFilter constructor injection in @WebMvcTest slice. */
+    @MockBean
+    private JwtUtil jwtUtil;
+
+    /** Mock UserDetailsServiceImpl to satisfy JwtAuthFilter constructor injection in @WebMvcTest slice. */
+    @MockBean
+    private UserDetailsServiceImpl userDetailsService;
+
     @MockBean
     private ResultService resultService;
+
 
     @Test
     void createResultReturnsCalculatedResult() throws Exception {
         when(resultService.createResult(any())).thenReturn(resultResponse(1L, 92.0, Grade.A_PLUS, ResultStatus.PASS));
 
         mockMvc.perform(post("/api/results")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"studentId":1,"examId":1,"marks":92}
@@ -57,6 +72,7 @@ class ResultControllerTest {
             .thenThrow(new BusinessRuleException("Result already recorded for student id: 1 and exam id: 1"));
 
         mockMvc.perform(post("/api/results")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"studentId":1,"examId":1,"marks":92}
@@ -69,6 +85,7 @@ class ResultControllerTest {
     @Test
     void invalidMarksReturnsValidationFailure() throws Exception {
         mockMvc.perform(post("/api/results")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"studentId":1,"examId":1,"marks":-1}
@@ -92,6 +109,7 @@ class ResultControllerTest {
     @Test
     void missingStudentIdReturnsValidationFailure() throws Exception {
         mockMvc.perform(post("/api/results")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"examId":1,"marks":70}
