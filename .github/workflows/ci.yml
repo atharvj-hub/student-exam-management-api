@@ -1,0 +1,64 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    # Provisions a PostgreSQL container for the duration of the job.
+    # While your unit tests currently use H2 (application-test.properties),
+    # having a real Postgres container available is a best practice for
+    # end-to-end integration tests that use @ActiveProfiles("dev").
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: student_test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        # Map port 5432 on the runner to 5432 on the postgres container
+        ports:
+          - 5432:5432
+        # Setup a healthcheck to ensure Postgres is fully booted before tests start
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          # Automatically caches ~/.m2 dependencies to drastically speed up future builds
+          cache: 'maven'
+
+      - name: Grant execute permission for Maven Wrapper
+        run: chmod +x ./mvnw
+
+      - name: Build and run tests
+        # Runs the Maven verify phase, which runs tests, checks JaCoCo limits, and packages the JAR
+        run: ./mvnw clean verify -P test
+        env:
+          # Optional: Force the 'test' profile (even though tests already specify it)
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload JaCoCo coverage report
+        # Uploads the HTML coverage report so you can view it directly from GitHub Actions UI
+        uses: actions/upload-artifact@v4
+        # always() ensures the report uploads even if the tests fail, helping you debug
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 7

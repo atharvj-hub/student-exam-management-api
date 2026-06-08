@@ -124,6 +124,7 @@ class ResultControllerTest {
             .thenReturn(resultResponse(1L, 92.0, Grade.A_PLUS, ResultStatus.PASS));
 
         mockMvc.perform(put("/api/results/1")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"marks":92}
@@ -138,6 +139,7 @@ class ResultControllerTest {
     @Test
     void updateWithNegativeMarksReturnsValidationFailure() throws Exception {
         mockMvc.perform(put("/api/results/1")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"marks":-5}
@@ -155,6 +157,7 @@ class ResultControllerTest {
             .thenReturn(resultResponse(1L, 85.0, Grade.A, ResultStatus.PASS));
 
         mockMvc.perform(put("/api/results/1")
+                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {"marks":85,"studentId":999}
