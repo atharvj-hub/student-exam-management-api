@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.internship.student_exam_api.security.annotation.RequirePermission;
 import com.internship.student_exam_api.security.permission.Permission;
@@ -20,8 +19,7 @@ import java.util.List;
  * <p>SECURITY — DUAL-LAYER DEFENSE:
  * <ul>
  *   <li>Layer 1 (URL): SecurityConfig enforces HTTP-method-level roles globally.</li>
- *   <li>Layer 2 (Method): @PreAuthorize enforces roles at the method AOP proxy level.</li>
- * </ul>
+ * Layer 2 (Method): @RequirePermission enforces permission-based authorization through the custom AOP framework. * </ul>
  * Both layers must agree before the request reaches business logic.
  */
 @RestController
