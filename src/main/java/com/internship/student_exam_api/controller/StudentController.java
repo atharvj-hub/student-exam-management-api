@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.internship.student_exam_api.security.annotation.RequirePermission;
+import com.internship.student_exam_api.security.permission.Permission;
 
 import java.util.List;
 
@@ -81,6 +83,7 @@ public class StudentController {
      *   201 = "a new resource was successfully created" (used for POST).
      */
     @PostMapping
+    @RequirePermission(Permission.USER_CREATE)
     public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody StudentCreateRequest request) {
         log.info("POST /api/students");
         StudentResponse response = studentService.createStudent(request);
@@ -93,6 +96,7 @@ public class StudentController {
      * ResponseEntity.ok() = HTTP 200 with body.
      */
     @GetMapping
+    @RequirePermission(Permission.USER_VIEW)
     public ResponseEntity<List<StudentResponse>> getAllStudents() {
         log.info("GET /api/students");
         return ResponseEntity.ok(studentService.getAllStudents());
@@ -108,6 +112,7 @@ public class StudentController {
      *     (add handler for MethodArgumentTypeMismatchException → 400 if needed)
      */
     @GetMapping("/{id}")
+    @RequirePermission(Permission.USER_VIEW)
     public ResponseEntity<StudentResponse> getStudentById(@PathVariable Long id) {
         log.info("GET /api/students/{}", id);
         return ResponseEntity.ok(studentService.getStudentById(id));
@@ -119,6 +124,7 @@ public class StudentController {
      * Returns 200 (not 201) because the resource already existed.
      */
     @PutMapping("/{id}")
+    @RequirePermission(Permission.USER_UPDATE)
     public ResponseEntity<StudentResponse> updateStudent(
             @PathVariable Long id,
             @Valid @RequestBody StudentUpdateRequest request) {
@@ -138,6 +144,7 @@ public class StudentController {
      * .build() instead of .body() because there's no body.
      */
     @DeleteMapping("/{id}")
+    @RequirePermission(Permission.USER_DELETE)
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         log.info("DELETE /api/students/{}", id);
         studentService.deleteStudent(id);

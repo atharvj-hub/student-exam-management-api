@@ -112,14 +112,6 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 ).permitAll()
 
-                // Read access: both ADMIN and STUDENT
-                .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "STUDENT")
-
-                // Write access: ADMIN only
-                .requestMatchers(HttpMethod.POST, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
-
                 // Anything else requires authentication
                 .anyRequest().authenticated()
             )
