@@ -1,0 +1,270 @@
+/* ============================================================
+   ENTRY EXPERIENCE — intro, role gate, student & admin login
+   + the shared CSS for the extended motion primitives.
+   Built on the same tokens as style.css. Swiss / editorial.
+   ============================================================ */
+
+/* ---- spacing scale (8 · 16 · 24 · 32 · 48 · 64 · 96) ------------------ */
+:root {
+  --s1: 8px;  --s2: 16px; --s3: 24px; --s4: 32px;
+  --s6: 48px; --s8: 64px; --s12: 96px;
+  --ink-mission: #0B0C09;   /* admin mission-control ground */
+}
+
+/* ============================================================
+   MOTION PRIMITIVES (Phases 6 & 7)
+   ============================================================ */
+.dir-aware > * { position: relative; z-index: 1; }
+.dir-fill {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: var(--paper-2); transform: translate3d(101%, 0, 0);
+}
+.grid-distort { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.grid-distort .gl { position: absolute; background: var(--hair); will-change: transform; }
+.grid-distort .gl.v { top: -8%; height: 116%; width: 1px; }
+.grid-distort .gl.h { left: -8%; width: 116%; height: 1px; }
+
+/* atmospheric background objects — floating bars, circles, forms.
+   Multiple depth bands + opacity levels; drift driven by data-float. */
+.atmos { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.atmos .obj { position: absolute; will-change: transform; }
+.obj.bar { background: var(--ink); }
+.obj.bar.lg { width: 3px; height: 230px; opacity: 0.06; }
+.obj.bar.md { width: 3px; height: 150px; background: var(--accent); opacity: 0.4; }
+.obj.bar.sm { width: 2px; height: 92px; opacity: 0.12; }
+.obj.ring { border: 1px solid var(--hair-2); border-radius: 50%; }
+.obj.ring.lg { width: 184px; height: 184px; opacity: 0.7; }
+.obj.ring.md { width: 92px; height: 92px; opacity: 0.9; }
+.obj.disc { width: 124px; height: 124px; border-radius: 50%; background: var(--ink); opacity: 0.04; }
+.obj.diamond { width: 30px; height: 30px; background: var(--accent); opacity: 0.42; }
+.obj.sq { width: 42px; height: 42px; border: 1px solid var(--hair-2); opacity: 0.8; }
+.obj.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); opacity: 0.4; }
+
+/* direction-aware fill on the sidebar / nav items (reuses .dir-fill) */
+.nav-item .dir-fill { background: var(--paper-2); }
+.nav-item[aria-current="true"] .dir-fill { background: var(--accent); opacity: 0.16; }
+.nav-item::before { z-index: 2; }
+
+/* scroll-linked editorial typography layer (Phases 3/4) */
+#view-root { position: relative; }
+.view-content { position: relative; z-index: 1; }
+.scroll-type-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.stl-word {
+  position: absolute; font-weight: 700; letter-spacing: -0.05em; line-height: 0.8;
+  text-transform: lowercase; color: var(--ink); opacity: 0.04; white-space: nowrap;
+  font-size: clamp(72px, 12vw, 200px); will-change: transform, clip-path;
+}
+
+/* ============================================================
+   ENTRY SHELL
+   ============================================================ */
+.entry {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--paper); color: var(--ink);
+  overflow: hidden; cursor: none;
+  font-family: "Helvetica Neue", Helvetica, "Arial Nova", Arial, sans-serif;
+}
+@media (pointer: coarse), (hover: none) { .entry { cursor: auto; } }
+.entry-stage { position: absolute; inset: 0; display: flex; flex-direction: column; }
+
+/* frame meta rows shared by all entry stages */
+.frame-top, .frame-bot {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: var(--s3); padding: var(--s3) var(--s6); position: relative; z-index: 3;
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3);
+}
+.frame-top { border-bottom: 1px solid var(--hair); }
+.frame-bot { border-top: 1px solid var(--hair); margin-top: auto; }
+.frame-top .mid, .frame-bot .mid { text-align: center; color: var(--ink-2); }
+.frame-top .end, .frame-bot .end { text-align: right; }
+.frame-mark { display: inline-flex; align-items: center; gap: var(--s1); color: var(--ink); }
+.frame-mark b { width: 10px; height: 10px; background: var(--accent); display: inline-block; }
+
+/* background typographic layers (Phase 3) */
+.type-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.type-bg span {
+  position: absolute; font-weight: 700; letter-spacing: -0.05em; line-height: 0.8;
+  text-transform: lowercase; color: var(--ink); opacity: 0.028; white-space: nowrap;
+  font-size: clamp(120px, 22vw, 360px);
+}
+
+/* ============================================================
+   PHASE 2 — KINETIC TYPOGRAPHY INTRO
+   ============================================================ */
+.intro-core {
+  flex: 1; position: relative; z-index: 2;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 var(--s6);
+}
+.intro-kicker {
+  font-family: "SF Mono", ui-monospace, monospace; font-size: 11px;
+  letter-spacing: 0.34em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: var(--s3); opacity: 0;
+}
+.intro-stack { display: flex; flex-direction: column; gap: 0; }
+.intro-word {
+  display: block; font-weight: 700; letter-spacing: -0.045em; line-height: 0.84;
+  text-transform: lowercase; font-size: clamp(54px, 12.5vw, 200px);
+  will-change: transform; }
+.intro-word.accent { color: var(--accent); }
+.intro-word .ch { display: inline-block; will-change: transform; }
+.intro-meta {
+  margin-top: var(--s6); display: grid; grid-template-columns: repeat(12, 1fr);
+  gap: var(--s3); align-items: end; opacity: 0;
+}
+.intro-meta .col-a { grid-column: 1 / 6; }
+.intro-meta .col-b { grid-column: 7 / 10; }
+.intro-meta .col-c { grid-column: 10 / 13; text-align: right; }
+.intro-meta p { font-size: 13px; line-height: 1.5; color: var(--ink-2); max-width: 42ch; }
+.intro-meta .lab { font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: var(--s1); }
+.intro-meta .big { font-weight: 700; font-size: 34px; letter-spacing: -0.03em; }
+
+.console-mini { display: grid; gap: 4px; }
+.console-mini .l { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; color: var(--ink-2); letter-spacing: 0.02em; }
+.console-mini .l .pre { color: var(--accent); }
+.console-mini .l.dim { color: var(--ink-3); }
+
+.skip {
+  border: 1px solid var(--ink); background: none; color: var(--ink); cursor: none;
+  font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; padding: 8px 14px; display: inline-flex; gap: 10px; align-items: center;
+}
+.skip:hover { background: var(--ink); color: var(--paper); }
+
+/* ============================================================
+   PHASE 1 — ROLE GATE
+   ============================================================ */
+.gate-core { flex: 1; position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; }
+.gate-col {
+  position: relative; padding: var(--s8) var(--s6); display: flex; flex-direction: column;
+  justify-content: space-between; min-height: 0; border-right: 1px solid var(--hair);
+  background: none; cursor: none; text-align: left; color: inherit;
+  font-family: inherit; border-top: 0; border-bottom: 0; border-left: 0;
+}
+.gate-col:last-child { border-right: 0; }
+.gate-col .gc-idx { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); }
+.gate-col .gc-title { font-weight: 700; letter-spacing: -0.04em; line-height: 0.86; text-transform: lowercase; font-size: clamp(36px, 5.2vw, 90px); margin: var(--s4) 0; }
+.gate-col .gc-desc { font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 38ch; }
+.gate-col .gc-enter { margin-top: var(--s6); display: inline-flex; align-items: center; gap: 12px; font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); }
+.gate-col .gc-enter .arr { transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.gate-col:hover .gc-enter .arr { transform: translateX(8px); }
+.gate-col .gc-tags { display: flex; flex-wrap: wrap; gap: var(--s1); margin-top: var(--s4); }
+.gate-col .gc-tags span { font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--hair); padding: 5px 9px; }
+.gate-col.admin .dir-fill { background: var(--ink); }
+.gate-col.admin:hover { color: var(--paper); }
+.gate-col.admin:hover .gc-desc { color: rgba(var(--paper-rgb), 0.7); }
+.gate-col.admin:hover .gc-enter, .gate-col.admin:hover .gc-idx { color: var(--paper); }
+.gate-col.admin:hover .gc-tags span { color: rgba(var(--paper-rgb), 0.6); border-color: rgba(var(--paper-rgb), 0.25); }
+
+/* ============================================================
+   PHASE 1 — LOGIN SCREENS (shared)
+   ============================================================ */
+.auth-core { flex: 1; position: relative; z-index: 2; display: grid; min-height: 0; }
+.auth-back {
+  position: absolute; top: var(--s3); left: var(--s6); z-index: 5;
+  background: none; border: 0; cursor: none; color: inherit;
+  font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; display: inline-flex; gap: 8px; align-items: center; opacity: 0.7;
+}
+.auth-back:hover { opacity: 1; }
+
+.field { display: flex; flex-direction: column; gap: var(--s1); border-bottom: 1px solid var(--hair-2); padding-bottom: var(--s2); }
+.field label { font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+.field input {
+  background: none; border: 0; font-family: inherit; font-size: 20px; color: var(--ink);
+  letter-spacing: -0.01em; padding: 4px 0;
+}
+.field input:focus { outline: none; }
+.field input::placeholder { color: var(--ink-3); opacity: 0.6; }
+
+.auth-submit {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 16px;
+  font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 16px 22px; border: 1px solid var(--ink);
+  background: var(--ink); color: var(--paper); cursor: none; width: 100%;
+}
+.auth-submit.accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.auth-demo {
+  background: none; border: 0; cursor: none; color: var(--ink-3);
+  font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px;
+}
+.auth-demo:hover { color: var(--accent); }
+
+/* --- STUDENT : clean editorial -------------------------------------- */
+.auth.student .auth-core { grid-template-columns: 1.15fr 1fr; }
+.auth.student .a-left {
+  position: relative; padding: var(--s12) var(--s6) var(--s6);
+  display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--hair);
+}
+.auth.student .a-eyebrow { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--s3); }
+.auth.student .a-head { font-weight: 700; letter-spacing: -0.045em; line-height: 0.84; text-transform: lowercase; font-size: clamp(46px, 7vw, 116px); }
+.auth.student .a-head .accent { color: var(--accent); }
+.auth.student .a-sub { margin-top: var(--s4); font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 40ch; }
+.auth.student .a-foot { margin-top: var(--s8); display: flex; gap: var(--s6); }
+.auth.student .a-foot .blk .lab { font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+.auth.student .a-foot .blk .val { font-weight: 700; font-size: 22px; letter-spacing: -0.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.auth.student .a-right {
+  padding: var(--s12) var(--s6) var(--s6); display: flex; flex-direction: column; justify-content: center;
+  gap: var(--s4); max-width: 460px;
+}
+.auth.student .a-right .form-head { font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; border-bottom: 1px solid var(--ink); padding-bottom: var(--s2); }
+
+/* --- ADMIN : mission control (always dark ground) ------------------- */
+.auth.admin .entry-stage, .auth.admin { background: var(--ink-mission); color: #E4E2D6; }
+.auth.admin { --hair: rgba(228,226,214,0.14); --hair-2: rgba(228,226,214,0.3); --ink: #E4E2D6; --ink-2: #9A988A; --ink-3: #6A685C; --paper: #0B0C09; --accent: #F0402B; --accent-ink: #0B0C09; --paper-rgb: 11,12,9; }
+.auth.admin .type-bg span { color: #fff; opacity: 0.04; }
+.auth.admin .auth-core { grid-template-columns: 260px 1fr 320px; }
+.auth.admin .mc-rail {
+  border-right: 1px solid var(--hair); padding: var(--s12) var(--s4) var(--s4);
+  display: flex; flex-direction: column; gap: var(--s4);
+}
+.auth.admin .mc-rail .blk .lab { font-family: "SF Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+.auth.admin .mc-rail .blk .val { font-family: "SF Mono", ui-monospace, monospace; font-size: 13px; color: var(--ink); margin-top: 6px; letter-spacing: 0.04em; }
+.auth.admin .mc-rail .status { margin-top: auto; display: grid; gap: 8px; }
+.auth.admin .mc-rail .status .row { display: flex; align-items: center; gap: 8px; font-family: "SF Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.auth.admin .mc-rail .status .row i { width: 7px; height: 7px; background: var(--accent); display: inline-block; }
+.auth.admin .mc-rail .status .row.ok i { background: #6FBF73; }
+
+.auth.admin .mc-main {
+  padding: var(--s12) var(--s6) var(--s6); position: relative;
+  display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--hair);
+}
+.auth.admin .mc-eyebrow { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); margin-bottom: var(--s3); }
+.auth.admin .mc-head { font-weight: 700; letter-spacing: -0.045em; line-height: 0.82; text-transform: lowercase; font-size: clamp(40px, 6vw, 96px); }
+.auth.admin .mc-form { margin-top: var(--s8); display: grid; gap: var(--s4); max-width: 520px; }
+.auth.admin .mc-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+
+.auth.admin .mc-console {
+  border-left: 1px solid var(--hair); padding: var(--s12) var(--s4) var(--s4);
+  background: rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 2px;
+}
+.auth.admin .mc-console .ttl { font-family: "SF Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: var(--s2); }
+.auth.admin .mc-console .l { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; line-height: 1.75; color: var(--ink-2); }
+.auth.admin .mc-console .l .pre { color: var(--accent); }
+.auth.admin .mc-console .l.dim { color: var(--ink-3); }
+
+/* ============================================================
+   RESPONSIVE + REDUCED MOTION
+   ============================================================ */
+@media (max-width: 1040px) {
+  .entry-stage { overflow-y: auto; }
+  .auth-back { position: static; order: -1; align-self: flex-start; margin: var(--s3) var(--s4) 0; }
+  .gate-core { grid-template-columns: 1fr; }
+  .gate-col { border-right: 0; border-bottom: 1px solid var(--hair); min-height: 64vh; padding: var(--s6) var(--s4); }
+  .auth.student .auth-core { grid-template-columns: 1fr; }
+  .auth.student .a-left { border-right: 0; border-bottom: 1px solid var(--hair); padding: var(--s8) var(--s4) var(--s4); }
+  .auth.student .a-right { padding: var(--s6) var(--s4); max-width: none; }
+  .auth.admin .auth-core { grid-template-columns: 1fr; }
+  .auth.admin .mc-rail, .auth.admin .mc-console { display: none; }
+  .auth.admin .mc-main { border-right: 0; padding: var(--s8) var(--s4) var(--s4); }
+  .frame-top, .frame-bot { padding: var(--s2) var(--s4); }
+  .intro-core, .gate-core { padding-left: var(--s4); padding-right: var(--s4); }
+  .intro-meta { grid-template-columns: 1fr; gap: var(--s4); }
+  .intro-meta .col-a, .intro-meta .col-b, .intro-meta .col-c { grid-column: auto; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-kicker, .intro-meta { opacity: 1 !important; }
+  .grid-distort, .type-bg, .atmos, .scroll-type-layer { display: none; }
+}
