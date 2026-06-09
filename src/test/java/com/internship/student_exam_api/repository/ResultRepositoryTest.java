@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -33,8 +34,8 @@ class ResultRepositoryTest {
         Student firstStudent = persistStudent("First Student", "first@example.com", "ROLL001");
         Student secondStudent = persistStudent("Second Student", "second@example.com", "ROLL002");
         Exam exam = persistExam();
-        persistResult(firstStudent, exam, 90.0, Grade.A_PLUS);
-        persistResult(secondStudent, exam, 70.0, Grade.B);
+        persistResult(firstStudent, exam, new BigDecimal("90.00"), Grade.A_PLUS);
+        persistResult(secondStudent, exam, new BigDecimal("70.00"), Grade.B);
         entityManager.flush();
         entityManager.clear();
 
@@ -49,7 +50,7 @@ class ResultRepositoryTest {
     void findByIdWithDetailsFetchesStudentExamAndSubject() {
         Student student = persistStudent("Test Student", "test@example.com", "ROLL001");
         Exam exam = persistExam();
-        Result saved = persistResult(student, exam, 75.0, Grade.A);
+        Result saved = persistResult(student, exam, new BigDecimal("75.00"), Grade.A);
         entityManager.flush();
         entityManager.clear();
 
@@ -77,7 +78,7 @@ class ResultRepositoryTest {
     void existenceCheckSupportsDuplicateResultGuard() {
         Student student = persistStudent("Test Student", "test@example.com", "ROLL001");
         Exam exam = persistExam();
-        persistResult(student, exam, 82.0, Grade.A);
+        persistResult(student, exam, new BigDecimal("82.00"), Grade.A);
         entityManager.flush();
 
         // After saving a result, the student+exam pair must be detected as already existing
@@ -95,7 +96,7 @@ class ResultRepositoryTest {
         return entityManager.persist(new Exam("Final Exam", subject, LocalDate.of(2026, 6, 3)));
     }
 
-    private Result persistResult(Student student, Exam exam, Double marks, Grade grade) {
+    private Result persistResult(Student student, Exam exam, BigDecimal marks, Grade grade) {
         Result result = new Result();
         result.setStudent(student);
         result.setExam(exam);

@@ -1,11 +1,12 @@
 package com.internship.student_exam_api.dto.request;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.math.BigDecimal;
 
 /**
  * Request DTO for recording a new Result.
@@ -29,7 +30,7 @@ public class ResultCreateRequest {
     private Long examId;
 
     @NotNull(message = "Marks are required")
-    @Min(value = 0, message = "Marks cannot be negative")
-    @Max(value = 10000, message = "Marks value is unreasonably high")
-    private Double marks;
+    @DecimalMin(value = "0", message = "Marks cannot be negative")
+    @DecimalMax(value = "10000", message = "Marks value is unreasonably high")
+    private BigDecimal marks;
 }
