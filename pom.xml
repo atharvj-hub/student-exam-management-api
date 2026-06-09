@@ -227,6 +227,7 @@
 						<exclude>**/enums/**</exclude>
 						<exclude>**/config/**</exclude>
 						<exclude>**/StudentExamApiApplication.class</exclude>
+						<exclude>**/seeder/**</exclude>
 					</excludes>
 				</configuration>
 			</plugin>
