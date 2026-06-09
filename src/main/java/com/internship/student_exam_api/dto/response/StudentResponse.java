@@ -31,6 +31,7 @@ public class StudentResponse {
     private String name;
     private String email;
     private String rollNumber;
+    private String section;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

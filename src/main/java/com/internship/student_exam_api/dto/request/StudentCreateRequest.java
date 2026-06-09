@@ -36,4 +36,6 @@ public class StudentCreateRequest {
      */
     @NotBlank(message = "Roll number is required")
     private String rollNumber;
+
+    private String section;
 }

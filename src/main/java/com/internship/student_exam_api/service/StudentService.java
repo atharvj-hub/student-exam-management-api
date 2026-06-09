@@ -95,7 +95,8 @@ public class StudentService {
         Student student = new Student(
             request.getName(),
             request.getEmail(),
-            request.getRollNumber()
+            request.getRollNumber(),
+            request.getSection()
         );
 
         // Hibernate INSERT — after this line, student.getId() is populated
@@ -172,6 +173,7 @@ public class StudentService {
         // Only mutable fields are updated — rollNumber is immutable post-creation
         student.setName(request.getName());
         student.setEmail(request.getEmail());
+        student.setSection(request.getSection());
 
         // Hibernate dirty checking would auto-save on commit, but explicit save is clearer
         Student updated = studentRepository.save(student);
@@ -233,6 +235,7 @@ public class StudentService {
             .name(student.getName())
             .email(student.getEmail())
             .rollNumber(student.getRollNumber())
+            .section(student.getSection())
             .createdAt(student.getCreatedAt())
             .updatedAt(student.getUpdatedAt())
             .build();

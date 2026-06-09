@@ -83,6 +83,9 @@ public class Student {
     @Column(name = "roll_number", nullable = false, unique = true, length = 20)
     private String rollNumber;
 
+    @Column(name = "section", length = 10)
+    private String section;
+
     /**
      * @CreationTimestamp → Hibernate automatically sets this to current time
      *   when the entity is first persisted. You never set this manually.
@@ -107,5 +110,12 @@ public class Student {
         this.name = name;
         this.email = email;
         this.rollNumber = rollNumber;
+    }
+
+    public Student(String name, String email, String rollNumber, String section) {
+        this.name = name;
+        this.email = email;
+        this.rollNumber = rollNumber;
+        this.section = section;
     }
 }
