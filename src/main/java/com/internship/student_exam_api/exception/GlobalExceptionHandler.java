@@ -98,6 +98,34 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ─── 401 Unauthorized — Missing/Invalid Auth ──────────────────────────────
+    @ExceptionHandler(com.internship.student_exam_api.security.exception.MissingAuthorizationHeaderException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingAuth(com.internship.student_exam_api.security.exception.MissingAuthorizationHeaderException ex) {
+        log.warn("Missing auth: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            ApiErrorResponse.builder()
+                .status(401)
+                .error("UNAUTHORIZED")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
+    // ─── 403 Forbidden — Insufficient Permission ──────────────────────────────
+    @ExceptionHandler(com.internship.student_exam_api.security.exception.InsufficientPermissionException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientPermission(com.internship.student_exam_api.security.exception.InsufficientPermissionException ex) {
+        log.warn("Permission denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ApiErrorResponse.builder()
+                .status(403)
+                .error("FORBIDDEN")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
     /**
      * ─── 422 Unprocessable Entity — @Valid Validation Failure ───────────────
      */
