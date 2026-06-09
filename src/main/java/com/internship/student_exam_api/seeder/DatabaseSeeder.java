@@ -168,7 +168,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 ResultCreateRequest request = new ResultCreateRequest();
                 request.setStudentId(student.getId());
                 request.setExamId(exam.getId());
-                request.setMarks(finalMark);
+                request.setMarks(java.math.BigDecimal.valueOf(finalMark));
                 
                 resultService.createResult(request);
                 resultsCreated++;
