@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(StudentController.class)
 @WithMockUser(roles = "ADMIN")
+@org.springframework.context.annotation.Import(com.internship.student_exam_api.security.context.JwtRequestContextFilter.class)
 class StudentControllerTest {
 
     @Autowired
@@ -40,6 +41,9 @@ class StudentControllerTest {
     /** Mock UserDetailsServiceImpl to satisfy JwtAuthFilter constructor injection in @WebMvcTest slice. */
     @MockBean
     private UserDetailsServiceImpl userDetailsService;
+
+    @MockBean
+    private com.internship.student_exam_api.security.context.JwtRequestContext jwtRequestContext;
 
     @MockBean
     private StudentService studentService;

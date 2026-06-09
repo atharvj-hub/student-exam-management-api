@@ -59,16 +59,19 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final com.internship.student_exam_api.security.context.JwtRequestContextFilter jwtRequestContextFilter;
 
     /**
      * Constructs SecurityConfig using constructor injection.
      *
      * @param jwtAuthFilter      JWT token authentication filter
      * @param userDetailsService Spring Security user details service
+     * @param jwtRequestContextFilter parses permissions into JwtRequestContext
      */
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService, com.internship.student_exam_api.security.context.JwtRequestContextFilter jwtRequestContextFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.jwtRequestContextFilter = jwtRequestContextFilter;
     }
 
     /**
@@ -123,6 +126,7 @@ public class SecurityConfig {
 
             // Insert JWT filter before Spring's default login filter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(jwtRequestContextFilter, JwtAuthFilter.class)
 
             .build();
     }
