@@ -48,7 +48,7 @@ jobs:
 
       - name: Build and run tests
         # Runs the Maven verify phase, which runs tests, checks JaCoCo limits, and packages the JAR
-        run: ./mvnw clean verify -P test
+        run: ./mvnw clean verify
         env:
           # Optional: Force the 'test' profile (even though tests already specify it)
           SPRING_PROFILES_ACTIVE: test

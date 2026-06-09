@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.internship.student_exam_api.security.annotation.RequirePermission;
+import com.internship.student_exam_api.security.permission.Permission;
 
 import java.util.List;
 
@@ -42,18 +44,21 @@ public class ResultController {
     }
 
     @PostMapping
+    @RequirePermission(Permission.RESULT_CREATE)
     public ResponseEntity<ResultResponse> createResult(@Valid @RequestBody ResultCreateRequest request) {
         log.info("POST /api/results");
         return ResponseEntity.status(HttpStatus.CREATED).body(resultService.createResult(request));
     }
 
     @GetMapping
+    @RequirePermission(Permission.RESULT_VIEW)
     public ResponseEntity<List<ResultResponse>> getAllResults() {
         log.info("GET /api/results");
         return ResponseEntity.ok(resultService.getAllResults());
     }
 
     @PutMapping("/{id}")
+    @RequirePermission(Permission.RESULT_UPDATE)
     public ResponseEntity<ResultResponse> updateResult(
             @PathVariable Long id,
             @Valid @RequestBody ResultUpdateRequest request) {
@@ -69,6 +74,7 @@ public class ResultController {
      * because Spring MVC matches more specific paths first.
      */
     @GetMapping("/student/{studentId}")
+    @RequirePermission(Permission.RESULT_VIEW)
     public ResponseEntity<List<ResultResponse>> getResultsByStudent(@PathVariable Long studentId) {
         log.info("GET /api/results/student/{}", studentId);
         return ResponseEntity.ok(resultService.getResultsByStudent(studentId));
