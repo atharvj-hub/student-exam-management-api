@@ -1,6 +1,8 @@
 package com.internship.student_exam_api.repository;
 
 import com.internship.student_exam_api.entity.Result;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -90,4 +92,33 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
            "JOIN FETCH e.subject " +
            "WHERE r.id = :id")
     Optional<Result> findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * Paginated fetch of all results with full details — used in GET /api/results.
+     *
+     * WHY a separate countQuery is mandatory:
+     *   Spring Data JPA derives the count query by wrapping the value query in
+     *   SELECT COUNT(*). Hibernate cannot wrap a JOIN FETCH clause in COUNT,
+     *   because JOIN FETCH is a Hibernate-specific hint to eagerly load associations
+     *   and has no meaning in a scalar count context.
+     *   Without countQuery → IllegalQueryOperationException at startup.
+     *
+     * WHY no duplicates despite JOIN FETCH:
+     *   All joins here are @ManyToOne (Result→Student, Result→Exam, Exam→Subject).
+     *   @ManyToOne joins produce exactly one row per Result — no multiplication.
+     *   Duplicates only occur with @OneToMany collections, which are absent here.
+     *
+     * WHY no DISTINCT needed:
+     *   Follows from the above — SQL result set has exactly N rows for N results.
+     *   Hibernate applies LIMIT/OFFSET at the database level correctly.
+     */
+    @Query(
+        value      = "SELECT r FROM Result r " +
+                     "JOIN FETCH r.student " +
+                     "JOIN FETCH r.exam e " +
+                     "JOIN FETCH e.subject",
+        countQuery = "SELECT COUNT(r) FROM Result r"
+    )
+    Page<Result> findAllWithDetailsPageable(Pageable pageable);
 }
+

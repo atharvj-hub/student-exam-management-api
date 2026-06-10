@@ -21,6 +21,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -110,6 +113,21 @@ class ResultControllerTest {
             .andExpect(jsonPath("$[0].id").value(1))
             .andExpect(jsonPath("$[0].student.id").value(1))
             .andExpect(jsonPath("$[0].grade").value("A"));
+    }
+
+    @Test
+    void getAllResultsReturnsPaginatedResponse() throws Exception {
+        when(resultService.getAllResults(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(
+                        resultResponse(1L, new BigDecimal("88.00"), Grade.A, ResultStatus.PASS))));
+
+        mockMvc.perform(get("/api/results"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].grade").value("A"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.last").value(true));
     }
 
     @Test

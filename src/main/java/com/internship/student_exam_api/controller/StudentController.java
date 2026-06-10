@@ -2,17 +2,19 @@ package com.internship.student_exam_api.controller;
 
 import com.internship.student_exam_api.dto.request.StudentCreateRequest;
 import com.internship.student_exam_api.dto.request.StudentUpdateRequest;
+import com.internship.student_exam_api.dto.response.PagedResponse;
 import com.internship.student_exam_api.dto.response.StudentResponse;
 import com.internship.student_exam_api.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.internship.student_exam_api.security.annotation.RequirePermission;
 import com.internship.student_exam_api.security.permission.Permission;
-
-import java.util.List;
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -97,9 +99,10 @@ public class StudentController {
      */
     @GetMapping
     @RequirePermission(Permission.USER_VIEW)
-    public ResponseEntity<List<StudentResponse>> getAllStudents() {
-        log.info("GET /api/students");
-        return ResponseEntity.ok(studentService.getAllStudents());
+    public ResponseEntity<PagedResponse<StudentResponse>> getAllStudents(
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        log.info("GET /api/students — page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+        return ResponseEntity.ok(PagedResponse.from(studentService.getAllStudents(pageable)));
     }
 
     /**

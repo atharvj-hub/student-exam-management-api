@@ -69,3 +69,5 @@ Thumbs.db
 .env.production.local
 application-local.properties
 .aider*
+.postman/ 
+postman/ 

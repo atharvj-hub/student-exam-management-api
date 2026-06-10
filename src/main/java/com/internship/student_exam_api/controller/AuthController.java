@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.HttpServletRequest;
+import com.internship.student_exam_api.service.RateLimitService;
 
 /**
  * Controller for handling authentication requests like user login.
@@ -26,6 +29,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final RateLimitService rateLimitService;
 
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
@@ -35,10 +39,12 @@ public class AuthController {
      *
      * @param authenticationManager the Spring Security authentication manager
      * @param jwtUtil token utility class
+     * @param rateLimitService rate limit service
      */
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, RateLimitService rateLimitService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.rateLimitService = rateLimitService;
     }
 
     /**
@@ -48,7 +54,17 @@ public class AuthController {
      * @return ResponseEntity holding LoginResponse details
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = httpRequest.getRemoteAddr();
+        }
+
+        if (!rateLimitService.resolveBucket(ip).tryConsume(1)) {
+            log.warn("Rate limit exceeded for IP: {}", ip);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        }
+
         log.info("Processing login request for user: {}", request.getEmail());
 
         Authentication authentication = authenticationManager.authenticate(
