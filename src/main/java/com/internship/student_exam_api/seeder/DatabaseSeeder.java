@@ -19,8 +19,10 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import org.springframework.data.domain.PageRequest;
 
 @Component
 @Profile("dev")
@@ -33,11 +35,20 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final ExamRepository examRepository;
     private final ResultService resultService;
 
+    private enum Trend { IMPROVING, DECLINING, STABLE, VOLATILE }
+
     @Override
     public void run(String... args) throws Exception {
-        if (studentRepository.count() > 0) {
-            log.info("Database already seeded. Skipping synthetic data generation.");
+        if (resultService.getAllResults(PageRequest.of(0, 1)).hasContent()) {
+            log.info("Results already exist. Skipping synthetic data generation.");
             return;
+        }
+        
+        // Clean up previous partial seeds (e.g. students without results)
+        if (studentRepository.count() > 0) {
+            examRepository.deleteAll();
+            subjectRepository.deleteAll();
+            studentRepository.deleteAll();
         }
 
         log.info("Starting synthetic database seeding...");
@@ -50,7 +61,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         // 2. Create Exams
         List<Exam> exams = createExams(subjects);
         
-        // 3. Create Students (50 Section A, 50 Section B)
+        // 3. Create Students (Sections A, B, C)
         List<StudentProfilePair> students = createStudents(faker, random);
         
         // 4. Generate Results
@@ -61,7 +72,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             =========================================
             Seeding complete
             Students: {}
-            Sections: 2
+            Sections: 3
             Subjects: {}
             Exams: {}
             Results: {}
@@ -76,20 +87,25 @@ public class DatabaseSeeder implements CommandLineRunner {
         subjects.add(subjectRepository.save(new Subject("Chemistry", "CHEM101", 100)));
         subjects.add(subjectRepository.save(new Subject("Computer Science", "CS101", 100)));
         subjects.add(subjectRepository.save(new Subject("English", "ENG101", 100)));
-        subjects.add(subjectRepository.save(new Subject("Engineering Mechanics", "MECH101", 100)));
         log.info("Subjects created: {}", subjects.size());
         return subjects;
     }
 
     private List<Exam> createExams(List<Subject> subjects) {
         List<Exam> exams = new ArrayList<>();
-        LocalDate baseDate = LocalDate.now().minusMonths(3);
+        LocalDate baseDate = LocalDate.now().minusMonths(6);
 
+        // 20 exams total, 4 per subject
         for (Subject subject : subjects) {
-            exams.add(examRepository.save(new Exam("Quiz", subject, baseDate)));
-            exams.add(examRepository.save(new Exam("Mid Semester", subject, baseDate.plusMonths(1))));
-            exams.add(examRepository.save(new Exam("End Semester", subject, baseDate.plusMonths(2))));
+            exams.add(examRepository.save(new Exam("Unit Test 1", subject, baseDate)));
+            exams.add(examRepository.save(new Exam("Mid Semester", subject, baseDate.plusMonths(2))));
+            exams.add(examRepository.save(new Exam("Unit Test 2", subject, baseDate.plusMonths(4))));
+            exams.add(examRepository.save(new Exam("End Semester", subject, baseDate.plusMonths(5))));
         }
+        
+        // Sort exams by date so our trend logic works over time
+        exams.sort(Comparator.comparing(Exam::getExamDate));
+        
         log.info("Exams created: {}", exams.size());
         return exams;
     }
@@ -97,9 +113,17 @@ public class DatabaseSeeder implements CommandLineRunner {
     private List<StudentProfilePair> createStudents(Faker faker, Random random) {
         List<StudentProfilePair> pairs = new ArrayList<>();
 
-        for (int i = 1; i <= 100; i++) {
-            String section = (i <= 50) ? "A" : "B";
-            String rollPrefix = String.format("MCA%03d", (i <= 50) ? i : (i - 50));
+        // Ensure we cover all 4 trends evenly
+        Trend[] trends = {Trend.IMPROVING, Trend.DECLINING, Trend.STABLE, Trend.VOLATILE};
+
+        for (int i = 1; i <= 10; i++) {
+            // Sections A, B, C
+            String section;
+            if (i <= 3) section = "A";
+            else if (i <= 6) section = "B";
+            else section = "C";
+            
+            String rollPrefix = String.format("MCA%03d", i);
             String rollNumber = rollPrefix + "-" + section;
             
             String firstName = faker.name().firstName();
@@ -111,7 +135,9 @@ public class DatabaseSeeder implements CommandLineRunner {
             student = studentRepository.save(student);
 
             StudentPerformanceProfile profile = assignProfile(random);
-            pairs.add(new StudentProfilePair(student, profile));
+            Trend trend = trends[i % 4];
+            
+            pairs.add(new StudentProfilePair(student, profile, trend));
         }
         log.info("Students created: {}", pairs.size());
         return pairs;
@@ -119,11 +145,11 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private StudentPerformanceProfile assignProfile(Random random) {
         int chance = random.nextInt(100);
-        if (chance < 10) return StudentPerformanceProfile.TOP_PERFORMER; // 10%
-        if (chance < 35) return StudentPerformanceProfile.ABOVE_AVERAGE; // 25%
-        if (chance < 80) return StudentPerformanceProfile.AVERAGE;       // 45%
-        if (chance < 95) return StudentPerformanceProfile.WEAK;          // 15%
-        return StudentPerformanceProfile.AT_RISK;                        // 5%
+        if (chance < 15) return StudentPerformanceProfile.TOP_PERFORMER;
+        if (chance < 40) return StudentPerformanceProfile.ABOVE_AVERAGE;
+        if (chance < 75) return StudentPerformanceProfile.AVERAGE;
+        if (chance < 90) return StudentPerformanceProfile.WEAK;
+        return StudentPerformanceProfile.AT_RISK;
     }
 
     private int generateResults(List<StudentProfilePair> pairs, List<Exam> exams, Random random) {
@@ -132,38 +158,42 @@ public class DatabaseSeeder implements CommandLineRunner {
         for (StudentProfilePair pair : pairs) {
             Student student = pair.student();
             StudentPerformanceProfile profile = pair.profile();
+            Trend trend = pair.trend();
             
-            // Determine mean shift based on section (A slightly better)
-            double sectionShift = "A".equals(student.getSection()) ? +4.0 : -4.0;
+            double baseMean = getProfileMean(profile);
             
-            // Base mean and standard deviation based on profile
-            double profileMean = getProfileMean(profile);
-            double stdDev = getProfileStdDev(profile);
-            
-            // Final target mean for this student
-            double studentMean = profileMean + sectionShift;
-            
-            // 6 to 8 exams
-            int examsToTake = 6 + random.nextInt(3); 
+            // Generate between 10 and 20 results per student (total 100-200)
+            int examsToTake = 10 + random.nextInt(11); 
             
             List<Exam> shuffledExams = new ArrayList<>(exams);
             Collections.shuffle(shuffledExams, random);
-            List<Exam> selectedExams = shuffledExams.subList(0, Math.min(examsToTake, exams.size()));
+            List<Exam> selectedExams = shuffledExams.subList(0, examsToTake);
+            // Sort selected exams chronologically for accurate trend modeling
+            selectedExams.sort(Comparator.comparing(Exam::getExamDate));
             
-            for (Exam exam : selectedExams) {
-                double totalMarks = exam.getSubject().getTotalMarks();
+            for (int i = 0; i < selectedExams.size(); i++) {
+                Exam exam = selectedExams.get(i);
                 
-                // Gaussian generation
-                double rawMark = studentMean + (random.nextGaussian() * stdDev);
+                double rawMark = baseMean;
+                double progressRatio = (double) i / Math.max(1, selectedExams.size() - 1); // 0.0 to 1.0
                 
-                // Scale marks proportionally if totalMarks is not 100
-                double scaledMark = (rawMark / 100.0) * totalMarks;
+                switch (trend) {
+                    case IMPROVING -> rawMark += (progressRatio * 30) - 15; // Starts -15 below mean, ends +15 above
+                    case DECLINING -> rawMark += (progressRatio * -30) + 15; // Starts +15 above mean, ends -15 below
+                    case STABLE -> rawMark += random.nextGaussian() * 2; // Very tight variance
+                    case VOLATILE -> rawMark += random.nextGaussian() * 15; // High variance
+                }
                 
-                // Clamp marks against subject total marks
-                scaledMark = Math.max(0, Math.min(totalMarks, scaledMark));
+                // Add some natural random noise for all profiles
+                if (trend != Trend.STABLE && trend != Trend.VOLATILE) {
+                    rawMark += random.nextGaussian() * 4;
+                }
+                
+                // Clamp marks tightly between 45 and 98 to meet strict prompt requirements
+                rawMark = Math.max(45.0, Math.min(98.0, rawMark));
                 
                 // Round to nearest 2 decimal places
-                double finalMark = Math.round(scaledMark * 100.0) / 100.0;
+                double finalMark = Math.round(rawMark * 100.0) / 100.0;
                 
                 ResultCreateRequest request = new ResultCreateRequest();
                 request.setStudentId(student.getId());
@@ -179,23 +209,13 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private double getProfileMean(StudentPerformanceProfile profile) {
         return switch (profile) {
-            case TOP_PERFORMER -> 92.0;
-            case ABOVE_AVERAGE -> 78.0;
-            case AVERAGE -> 63.0;
-            case WEAK -> 45.0;
-            case AT_RISK -> 25.0;
+            case TOP_PERFORMER -> 88.0;
+            case ABOVE_AVERAGE -> 80.0;
+            case AVERAGE -> 70.0;
+            case WEAK -> 55.0;
+            case AT_RISK -> 48.0;
         };
     }
 
-    private double getProfileStdDev(StudentPerformanceProfile profile) {
-        return switch (profile) {
-            case TOP_PERFORMER -> 3.0;
-            case ABOVE_AVERAGE -> 5.0;
-            case AVERAGE -> 6.0;
-            case WEAK -> 7.0;
-            case AT_RISK -> 10.0;
-        };
-    }
-
-    private record StudentProfilePair(Student student, StudentPerformanceProfile profile) {}
+    private record StudentProfilePair(Student student, StudentPerformanceProfile profile, Trend trend) {}
 }

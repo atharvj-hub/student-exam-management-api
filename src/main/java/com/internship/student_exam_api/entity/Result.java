@@ -90,15 +90,15 @@ public class Result {
      * Max marks validation happens in ResultService:
      *   marks <= exam.subject.totalMarks (business rule, not just a constraint)
      */
-    @Column(name = "marks", nullable = false, precision = 8, scale = 2)
-    private BigDecimal marks;
+    @Column(name = "marks", nullable = false)
+    private Double marks;
 
     /**
      * Auto-calculated fields — set by ResultService, not by API caller.
      * percentage = (marks / totalMarks) * 100
      */
-    @Column(name = "percentage", nullable = false, precision = 5, scale = 2)
-    private BigDecimal percentage;
+    @Column(name = "percentage", nullable = false)
+    private Double percentage;
 
     /**
      * @Enumerated(EnumType.STRING) → stores "A_PLUS", "A", "B", "C", "FAIL"

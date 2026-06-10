@@ -164,7 +164,7 @@ class ResultServiceMockitoTest {
         result.setId(1L);
         result.setStudent(student);
         result.setExam(exam);
-        result.setMarks(new BigDecimal("70"));
+        result.setMarks(70.0);
 
         when(resultRepository.findByIdWithDetails(1L))
                 .thenReturn(java.util.Optional.of(result));
@@ -174,7 +174,7 @@ class ResultServiceMockitoTest {
         ResultResponse response = resultService.updateResult(1L, request);
 
         org.junit.jupiter.api.Assertions.assertNotNull(response);
-        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("85"), response.getMarks());
-        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("85.00"), response.getPercentage());
+        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("85.0"), response.getMarks());
+        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("85.0"), response.getPercentage());
     }
 }

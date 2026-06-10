@@ -113,8 +113,8 @@ public class ResultService {
         Result result = new Result();
         result.setStudent(student);
         result.setExam(exam);
-        result.setMarks(request.getMarks());
-        result.setPercentage(percentage);
+        result.setMarks(request.getMarks().doubleValue());
+        result.setPercentage(percentage.doubleValue());
         result.setGrade(grade);
         result.setStatus(status);
 
@@ -174,8 +174,8 @@ public class ResultService {
         Grade grade = calculateGrade(percentage);
         ResultStatus status = calculateStatus(percentage);
 
-        result.setMarks(request.getMarks());
-        result.setPercentage(percentage);
+        result.setMarks(request.getMarks().doubleValue());
+        result.setPercentage(percentage.doubleValue());
         result.setGrade(grade);
         result.setStatus(status);
 
@@ -246,8 +246,8 @@ public class ResultService {
             .id(result.getId())
             .student(studentService.toResponse(result.getStudent()))
             .exam(examService.toResponse(result.getExam()))
-            .marks(result.getMarks())
-            .percentage(result.getPercentage())
+            .marks(BigDecimal.valueOf(result.getMarks()))
+            .percentage(BigDecimal.valueOf(result.getPercentage()))
             .grade(result.getGrade())
             .status(result.getStatus())
             .createdAt(result.getCreatedAt())

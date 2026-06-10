@@ -100,8 +100,8 @@ class ResultRepositoryTest {
         Result result = new Result();
         result.setStudent(student);
         result.setExam(exam);
-        result.setMarks(marks);
-        result.setPercentage(marks);
+        result.setMarks(marks.doubleValue());
+        result.setPercentage(marks.doubleValue());
         result.setGrade(grade);
         result.setStatus(ResultStatus.PASS);
         return entityManager.persist(result);
