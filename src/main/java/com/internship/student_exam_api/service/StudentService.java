@@ -8,6 +8,8 @@ import com.internship.student_exam_api.exception.DuplicateResourceException;
 import com.internship.student_exam_api.exception.ResourceNotFoundException;
 import com.internship.student_exam_api.repository.StudentRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -111,16 +113,10 @@ public class StudentService {
     // ════════════════════════════════════════════════════════════
 
     @Transactional(readOnly = true)
-    public List<StudentResponse> getAllStudents() {
-        log.info("Fetching all students");
-
-        // findAll() → SELECT * FROM students
-        // .stream().map(this::toResponse) → maps each Student entity to StudentResponse
-        // .collect(Collectors.toList()) → collects the stream back into a List
-        return studentRepository.findAll()
-            .stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+    public Page<StudentResponse> getAllStudents(Pageable pageable) {
+        log.info("Fetching students — page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+        return studentRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
     // ════════════════════════════════════════════════════════════

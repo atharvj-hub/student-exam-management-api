@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -145,6 +146,22 @@ public class GlobalExceptionHandler {
                 .message("Validation failed. Check validationErrors for details.")
                 .timestamp(LocalDateTime.now())
                 .validationErrors(validationErrors)
+                .build()
+        );
+    }
+
+    /**
+     * ─── 409 Conflict — DB Constraint Violation ──────────────────────────────
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Database constraint violation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ApiErrorResponse.builder()
+                .status(409)
+                .error("CONFLICT")
+                .message("A record with these unique details already exists or violates a database constraint.")
+                .timestamp(LocalDateTime.now())
                 .build()
         );
     }

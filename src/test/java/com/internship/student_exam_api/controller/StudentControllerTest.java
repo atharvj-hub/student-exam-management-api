@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -76,12 +78,16 @@ class StudentControllerTest {
 
     @Test
     void getAllStudentsReturnsList() throws Exception {
-        when(studentService.getAllStudents()).thenReturn(List.of(studentResponse(1L), studentResponse(2L)));
+        when(studentService.getAllStudents(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(studentResponse(1L), studentResponse(2L))));
 
         mockMvc.perform(get("/api/students"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].id").value(1))
-            .andExpect(jsonPath("$[1].id").value(2));
+            .andExpect(jsonPath("$.content[0].id").value(1))
+            .andExpect(jsonPath("$.content[1].id").value(2))
+            .andExpect(jsonPath("$.totalElements").value(2))
+            .andExpect(jsonPath("$.totalPages").value(1))
+            .andExpect(jsonPath("$.last").value(true));
     }
 
     @Test

@@ -2,17 +2,20 @@ package com.internship.student_exam_api.controller;
 
 import com.internship.student_exam_api.dto.request.ResultCreateRequest;
 import com.internship.student_exam_api.dto.request.ResultUpdateRequest;
+import com.internship.student_exam_api.dto.response.PagedResponse;
 import com.internship.student_exam_api.dto.response.ResultResponse;
 import com.internship.student_exam_api.service.ResultService;
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.internship.student_exam_api.security.annotation.RequirePermission;
 import com.internship.student_exam_api.security.permission.Permission;
-
-import java.util.List;
 
 /**
  * ResultController — 4 endpoints
@@ -52,9 +55,10 @@ public class ResultController {
 
     @GetMapping
     @RequirePermission(Permission.RESULT_VIEW)
-    public ResponseEntity<List<ResultResponse>> getAllResults() {
-        log.info("GET /api/results");
-        return ResponseEntity.ok(resultService.getAllResults());
+    public ResponseEntity<PagedResponse<ResultResponse>> getAllResults(
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        log.info("GET /api/results — page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+        return ResponseEntity.ok(PagedResponse.from(resultService.getAllResults(pageable)));
     }
 
     @PutMapping("/{id}")

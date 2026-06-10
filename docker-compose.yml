@@ -53,6 +53,8 @@ services:
     environment:
       # Activates application-docker.properties
       SPRING_PROFILES_ACTIVE: docker
+      # Required — no default. Compose refuses to start if unset or empty.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (base64-encoded, >= 256 bits)}
       # Override datasource (redundant with docker profile but explicit)
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/student_exam_db
       SPRING_DATASOURCE_USERNAME: postgres

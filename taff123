@@ -1,0 +1,11 @@
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m[1;31m@PreAuthorize[m("hasRole('ADMIN')") on controller methods
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m3. `[1;31m@PreAuthorize[m` uses Spring Expression Language strings — `"hasRole('ADMIN')"` — which are not type-safe and fail silently on typos.
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m| `[1;31m@PreAuthorize[m` on controllers | Remove entirely; replaced by `@RequirePermission` |
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[mRemove all `[1;31m@PreAuthorize[m` annotations and replace with `@RequirePermission`:
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m@RequirePermission(Permission.USER_CREATE)          // ← replaces [1;31m@PreAuthorize[m("hasRole('ADMIN')")
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m1. `StudentController.java` — remove `[1;31m@PreAuthorize[m`, add `@RequirePermission`
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m| **Granularity** | ✅ Permission-level; can annotate any method in any layer | ⚠️ Role-level by default; `[1;31m@PreAuthorize[m` supports SpEL but is complex |
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[mFor a production system handling real user data, keep Spring Security for authentication and use Spring Security's `[1;31m@PreAuthorize[m` for authorization. The test coverage, vulnerability handling, and community support are not things you want to reinvent.
+[35mAOP_AUTHORIZATION_FRAMEWORK.md[m[36m:[m| `StudentController.java` | Modify | Replace `[1;31m@PreAuthorize[m` with `@RequirePermission` |
+[35mCLAUDE_CONTEXT.md[m[36m:[mDo not recommend replacing it with Spring Security [1;31m@PreAuthorize[m.
+[35msrc/main/java/com/internship/student_exam_api/enums/Role.java[m[36m:[m * hasRole("ADMIN") in [1;31m@PreAuthorize[m checks for "ROLE_ADMIN" automatically.
