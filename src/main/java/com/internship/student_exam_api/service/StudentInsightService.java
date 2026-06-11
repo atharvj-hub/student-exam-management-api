@@ -55,6 +55,9 @@ public class StudentInsightService {
         3. State your uncertainty in the confidence field. If the student has taken fewer than 3 exams, confidence MUST be LOW.
         4. Do not hallucinate subject codes; you must only mention subjects that appear in the input data.
         5. Do not re-calculate averages; interpret the ones provided.
+        6. Output ONLY the JSON object described below. No reasoning, no preamble,
+           no explanation, and no markdown code fences around it.
+        /no_think
         """;
 
     private static final String USER_PROMPT_TEMPLATE = """
@@ -153,14 +156,21 @@ public class StudentInsightService {
     private StudentInsightPayload callAiProvider(
             BeanOutputConverter<StudentInsightPayload> outputConverter,
             String userPrompt) {
+        String raw;
         try {
-            return chatClient.prompt()
+            // Take the RAW string rather than .entity(converter): qwen3 prefixes its
+            // answer with a <think>…</think> reasoning block (and sometimes a markdown
+            // fence), which BeanOutputConverter cannot strip, so it parses the prose as
+            // the root value and yields an all-null payload. We sanitize first, then convert.
+            raw = chatClient.prompt()
                     .system(SYSTEM_PROMPT)
                     .messages(new UserMessage(userPrompt))
                     .call()
-                    .entity(outputConverter);
+                    .content();
         } catch (ResourceAccessException e) {
-            log.error("AI provider unreachable: {}", e.getMessage());
+            // Includes socket read-timeout (see AiConfig) — treat a hung/slow model
+            // as provider-unavailable rather than letting the thread block forever.
+            log.error("AI provider unreachable or timed out: {}", e.getMessage());
             throw new AiProviderUnavailableException("AI provider is currently unreachable", e);
         } catch (AiProviderUnavailableException | AiAnalysisException e) {
             throw e;
@@ -168,6 +178,44 @@ public class StudentInsightService {
             log.error("AI call failed: {}", e.getMessage(), e);
             throw new AiAnalysisException("AI provider returned an unusable response", e);
         }
+
+        String json = sanitizeModelOutput(raw);
+        if (json == null || json.isBlank()) {
+            throw new AiAnalysisException("AI provider returned an empty or unparseable response");
+        }
+        try {
+            return outputConverter.convert(json);
+        } catch (Exception e) {
+            log.warn("AI output could not be parsed into StudentInsightPayload: {}", e.getMessage());
+            throw new AiAnalysisException("AI response could not be parsed into the required structure", e);
+        }
+    }
+
+    /**
+     * Normalizes a raw LLM completion into a bare JSON object string.
+     *
+     * <p>qwen3 (and similar reasoning models) wrap structured answers in a
+     * {@code <think>…</think>} block and occasionally a {@code ```json} fence.
+     * This strips those, then reduces the remainder to the substring spanning the
+     * first {@code '{'} to the last {@code '}'} so any residual prose is discarded.
+     * Returns {@code null} for {@code null} input.
+     */
+    static String sanitizeModelOutput(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        // Remove complete reasoning blocks, then any stray/unbalanced think tags.
+        String s = raw.replaceAll("(?is)<think>.*?</think>", " ")
+                      .replaceAll("(?is)</?think>", " ");
+        // Strip markdown code fences (```json … ```).
+        s = s.replaceAll("(?is)```(?:json)?", " ");
+        // Reduce to the JSON object: first '{' .. last '}'.
+        int start = s.indexOf('{');
+        int end = s.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            return s.substring(start, end + 1).trim();
+        }
+        return s.trim();
     }
 
     private void validatePayload(StudentInsightPayload payload) {

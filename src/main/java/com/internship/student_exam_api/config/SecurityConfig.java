@@ -64,7 +64,10 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtRequestContextFilter jwtRequestContextFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    // localhost and 127.0.0.1 are DISTINCT CORS origins. The dev server may be
+    // reached as either, so both variants are allowed by default to avoid a
+    // preflight "Missing Allow Origin" when the browser's Origin is 127.0.0.1.
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000}")
     private List<String> allowedOrigins;
 
     /**
