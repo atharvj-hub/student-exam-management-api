@@ -14,6 +14,7 @@ import com.internship.student_exam_api.security.permission.Permission;
 import com.internship.student_exam_api.security.permission.RolePermissions;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -133,7 +134,39 @@ public class JwtUtil {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(resolveKeyBytes(secretKey));
+    }
+
+    /**
+     * Resolves the configured secret into HMAC key bytes.
+     *
+     * <p>Production secrets are typically Base64-encoded 256-bit keys, so Base64 is
+     * tried first. But a human-readable dev secret (e.g. the dev-profile fallback)
+     * is not valid Base64 — rather than fail, we fall back to the raw UTF-8 bytes.
+     * Either way the result must be at least 32 bytes (256 bits) for HS256.</p>
+     *
+     * @param secret the configured {@code jwt.secret} value
+     * @return key bytes suitable for {@link Keys#hmacShaKeyFor(byte[])}
+     * @throws IllegalStateException if the secret is too short to form a 256-bit key
+     */
+    private static byte[] resolveKeyBytes(String secret) {
+        byte[] decoded = tryBase64Decode(secret);
+        if (decoded != null && decoded.length >= 32) {
+            return decoded;
+        }
+        byte[] raw = secret.getBytes(StandardCharsets.UTF_8);
+        if (raw.length >= 32) {
+            return raw;
+        }
+        throw new IllegalStateException(
+            "jwt.secret must be at least 32 bytes as raw text, or a Base64-encoded 256-bit key");
+    }
+
+    private static byte[] tryBase64Decode(String s) {
+        try {
+            return Decoders.BASE64.decode(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

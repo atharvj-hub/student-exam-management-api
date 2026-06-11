@@ -25,5 +25,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), NoCacheHandler) as httpd:
-        print(f"frontend dev server (no-cache) on http://127.0.0.1:{PORT}")
+        # Open via localhost (not 127.0.0.1): the backend CORS allowlist matches by
+        # exact origin, and the two hostnames are distinct origins to the browser.
+        print(f"frontend dev server (no-cache) on http://localhost:{PORT}")
         httpd.serve_forever()

@@ -1,4 +1,4 @@
-/* ============================================================
+  /* ============================================================
    VIEWS · B — Students (Screen 2), Student Detail (Screen 3),
                AI Insights (Screen 4).
    All numbers come from the real backend:

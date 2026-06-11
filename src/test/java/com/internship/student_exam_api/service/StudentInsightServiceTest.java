@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -202,7 +201,7 @@ class StudentInsightServiceTest {
                 .system(anyString())
                 .messages(any(UserMessage.class))
                 .call()
-                .entity(ArgumentMatchers.<org.springframework.ai.converter.BeanOutputConverter<StudentInsightPayload>>any()))
+                .content())
             .thenThrow(new ResourceAccessException("Connection refused"));
 
         assertThrows(AiProviderUnavailableException.class, () -> insightService.generateInsight(1L));
@@ -214,9 +213,41 @@ class StudentInsightServiceTest {
                 .system(anyString())
                 .messages(any(UserMessage.class))
                 .call()
-                .entity(ArgumentMatchers.<org.springframework.ai.converter.BeanOutputConverter<StudentInsightPayload>>any()))
+                .content())
             .thenThrow(new RuntimeException("Unexpected model error"));
 
+        assertThrows(AiAnalysisException.class, () -> insightService.generateInsight(1L));
+    }
+
+    // ── qwen3 reasoning-wrapper sanitization (cache-miss reliability) ─────────
+
+    @Test
+    void generateInsight_stripsThinkBlockAndCodeFence_succeeds() {
+        String wrapped = "<think>Let me reason about the trajectory step by step...</think>\n"
+                + "```json\n" + serialize(validPayload()) + "\n```";
+        mockRawContent(wrapped);
+
+        StudentInsightsResponse response = insightService.generateInsight(1L);
+
+        assertFalse(response.fromCache());
+        assertNotNull(response.insight());
+        verify(cacheRepository).save(any());
+    }
+
+    @Test
+    void generateInsight_stripsPlainReasoningPreamble_succeeds() {
+        String wrapped = "Here is the structured assessment you requested:\n" + serialize(validPayload());
+        mockRawContent(wrapped);
+
+        StudentInsightsResponse response = insightService.generateInsight(1L);
+
+        assertFalse(response.fromCache());
+        verify(cacheRepository).save(any());
+    }
+
+    @Test
+    void generateInsight_unparseableContent_throwsAiAnalysisException() {
+        mockRawContent("<think>the model rambled and never emitted any JSON object</think>");
         assertThrows(AiAnalysisException.class, () -> insightService.generateInsight(1L));
     }
 
@@ -276,12 +307,26 @@ class StudentInsightServiceTest {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void mockAiReturning(StudentInsightPayload payload) {
+        // The service now consumes the raw completion string and converts it itself,
+        // so the mock returns serialized JSON (or null) rather than a ready payload.
+        mockRawContent(payload == null ? null : serialize(payload));
+    }
+
+    private void mockRawContent(String content) {
         when(chatClient.prompt()
                 .system(anyString())
                 .messages(any(UserMessage.class))
                 .call()
-                .entity(ArgumentMatchers.<org.springframework.ai.converter.BeanOutputConverter<StudentInsightPayload>>any()))
-            .thenReturn(payload);
+                .content())
+            .thenReturn(content);
+    }
+
+    private String serialize(StudentInsightPayload payload) {
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private AiAnalysisCache cachedEntry(Long studentId, String hash, String model,
