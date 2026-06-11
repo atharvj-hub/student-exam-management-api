@@ -19,18 +19,20 @@
 <body data-trail>
   <div id="root"></div>
 
-  <!-- data + motion layers (plain scripts, run first) -->
-  <script src="data.js"></script>
-  <script src="motion.js"></script>
+  <!-- auth + api + motion layers (plain scripts, run first) -->
+  <script src="auth.js?v=2"></script>
+  <script src="api.js?v=2"></script>
+  <script src="motion.js?v=2"></script>
+  <script src="login-machine.js?v=2"></script>
 
   <!-- React UI layer (Babel-transpiled, in dependency order) -->
-  <script type="text/babel" src="helpers.jsx"></script>
-  <script type="text/babel" src="views-a.jsx"></script>
-  <script type="text/babel" src="views-b.jsx"></script>
-  <script type="text/babel" src="app.jsx"></script>
+  <script type="text/babel" src="helpers.jsx?v=2"></script>
+  <script type="text/babel" src="views-a.jsx?v=2"></script>
+  <script type="text/babel" src="views-b.jsx?v=2"></script>
+  <script type="text/babel" src="app.jsx?v=2"></script>
 
   <!-- Entry experience: intro, auth, router (mounts the app) -->
-  <script type="text/babel" src="entry-auth.jsx"></script>
-  <script type="text/babel" src="entry.jsx"></script>
+  <script type="text/babel" src="entry-auth.jsx?v=2"></script>
+  <script type="text/babel" src="entry.jsx?v=2"></script>
 </body>
 </html>

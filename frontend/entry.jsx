@@ -4,8 +4,6 @@
    Routes mirror /student/login and /admin/login via hash.
    ============================================================ */
 (function () {
-  const D = window.AID;
-  const S = D.summary;
   const { RoleGate, StudentLogin, AdminLogin, Atmosphere } = window;
 
   const WORDS = [
@@ -124,7 +122,7 @@
           <div className="intro-meta">
             <div className="col-a">
               <div className="lab">What this is</div>
-              <p>Not a student portal — a performance intelligence layer over the exam register. It reads {S.results.toLocaleString()} results across {S.students} students to surface who leads, what's failing, and who needs intervention.</p>
+              <p>Not a student portal — a performance intelligence layer over the exam register. It reads the live results in the Spring Boot API to surface who leads, what's failing, and who needs intervention.</p>
             </div>
             <div className="col-b">
               <div className="lab">Boot sequence</div>
@@ -152,59 +150,162 @@
   }
 
   /* ============================================================
-     ROOT ROUTER
+     ROOT ROUTER — hash-driven, auth-guarded.
+
+     Entry routes   #/  #/access  #/student/login  #/admin/login
+     App routes     #/dashboard   → overview        (any role)
+                    #/analytics   → analytics view  (any role)
+                    #/subjects    → subjects        (any role)
+                    #/results     → comparison      (any role)
+                    #/students    → student register (admin only)
+                    #/ai-insights → AI insights      (admin only)
+                    #/at-risk     → risk register    (admin only)
+     Legacy         #/app         → redirect (kept so old links work)
+
+     Guards: app routes require a valid (signed, unexpired) token;
+     admin-only views render a 403 panel for student sessions;
+     unknown hashes redirect somewhere sensible — never a blank
+     screen, never a loop.
      ============================================================ */
-  const HASH = { intro: "#/", gate: "#/access", student: "#/student/login", admin: "#/admin/login", app: "#/app" };
-  const fromHash = () => {
-    const h = location.hash || "#/";
-    return Object.keys(HASH).find((k) => HASH[k] === h);
+  const AUTH = window.AUTH;
+  const ENTRY_HASH = { intro: "#/", gate: "#/access", student: "#/student/login", admin: "#/admin/login" };
+  const APP_ROUTES = {
+    "#/dashboard": "overview",
+    "#/students": "students",
+    "#/ai-insights": "insights",
   };
-  function initialStage() {
-    const h = fromHash();
-    if (h === "app") return "app";
-    if (h && h !== "intro") return h;
-    return sessionStorage.getItem("aid-introSeen") ? "gate" : "intro";
+  const VIEW_HASH = {};
+  Object.keys(APP_ROUTES).forEach((h) => { VIEW_HASH[APP_ROUTES[h]] = h; });
+
+  const seenIntro = () => { try { return !!sessionStorage.getItem("aid-introSeen"); } catch (e) { return true; } };
+  const markIntroSeen = () => { try { sessionStorage.setItem("aid-introSeen", "1"); } catch (e) { /* */ } };
+
+  /* Pure-ish route resolution: hash + session -> renderable route or redirect. */
+  function resolveRoute(hash, isInitial) {
+    const h = hash || "#/";
+    const session = AUTH.getSession(); // validates signature + expiry
+
+    // legacy alias
+    if (h === "#/app") return { kind: "redirect", hash: session ? "#/dashboard" : "#/access" };
+
+    // protected app routes
+    if (Object.prototype.hasOwnProperty.call(APP_ROUTES, h)) {
+      if (!session) {
+        AUTH.setNotice("Sign in to access the dashboard.");
+        return { kind: "redirect", hash: "#/access" };
+      }
+      const view = APP_ROUTES[h];
+      if (!AUTH.canAccess(session.role, view)) {
+        return { kind: "app", view: "forbidden", denied: view, session };
+      }
+      AUTH.touch(); // sliding renewal — active users are never logged out mid-task
+      return { kind: "app", view, session };
+    }
+
+    // entry routes
+    const stage = Object.keys(ENTRY_HASH).find((k) => ENTRY_HASH[k] === h);
+    if (!stage) {
+      // unknown hash — one safe redirect, never a loop
+      return { kind: "redirect", hash: session ? "#/dashboard" : (seenIntro() ? "#/access" : "#/") };
+    }
+    // initial load at "#/": signed-in users go straight to their dashboard
+    // (refresh must never log out); returning visitors skip the intro.
+    if (stage === "intro" && isInitial) {
+      if (session) return { kind: "redirect", hash: "#/dashboard" };
+      if (seenIntro()) return { kind: "redirect", hash: "#/access" };
+    }
+    return { kind: "entry", stage };
   }
 
+  /* Resolve the initial route, following redirects synchronously
+     (replaceState, so back-button history stays clean). */
+  function resolveInitial() {
+    let r = resolveRoute(location.hash, true);
+    let guard = 0;
+    while (r.kind === "redirect" && guard++ < 5) {
+      try { history.replaceState(null, "", r.hash); } catch (e) { location.hash = r.hash; }
+      r = resolveRoute(r.hash, false);
+    }
+    if (r.kind === "redirect") r = { kind: "entry", stage: "gate" }; // absolute fallback
+    return r;
+  }
+
+  const goto = (hash) => { if (location.hash !== hash) location.hash = hash; };
+
   function Root() {
-    const [stage, setStage] = React.useState(initialStage);
+    const [route, setRoute] = React.useState(resolveInitial);
 
+    /* single hash listener for the app lifetime (was re-bound per stage) */
     React.useEffect(() => {
-      if (HASH[stage] && location.hash !== HASH[stage]) location.hash = HASH[stage];
-      if (stage !== "intro") sessionStorage.setItem("aid-introSeen", "1");
-    }, [stage]);
-
-    React.useEffect(() => {
-      const onHash = () => { const s = fromHash(); if (s && s !== stage) setStage(s); };
+      const onHash = () => {
+        const r = resolveRoute(location.hash, false);
+        if (r.kind === "redirect") { location.hash = r.hash; return; }
+        setRoute(r);
+      };
       window.addEventListener("hashchange", onHash);
       return () => window.removeEventListener("hashchange", onHash);
-    }, [stage]);
+    }, []);
 
-    // rescan motion when an entry stage mounts (binds dir-aware/elastic/grid)
+    /* anything past the intro marks it seen */
     React.useEffect(() => {
-      if (stage !== "app" && window.MOTION) {
+      if (route.kind !== "entry" || route.stage !== "intro") markIntroSeen();
+    }, [route]);
+
+    /* session-expiry watch while inside the app */
+    const appRole = route.kind === "app" && route.session ? route.session.role : null;
+    React.useEffect(() => {
+      if (!appRole) return;
+      return AUTH.startExpiryWatch(() => {
+        // AUTH already purged the session + queued the "expired" notice
+        location.hash = appRole === "admin" ? "#/admin/login" : "#/student/login";
+      });
+    }, [appRole]);
+
+    /* rescan motion when an entry stage mounts (binds dir-aware/elastic/grid) */
+    React.useEffect(() => {
+      if (route.kind === "entry" && window.MOTION) {
         const id = requestAnimationFrame(() => window.MOTION.scan(document));
         return () => cancelAnimationFrame(id);
       }
-    }, [stage]);
+    }, [route]);
 
-    const enterApp = React.useCallback((role) => {
-      sessionStorage.setItem("aid-role", role);
-      sessionStorage.setItem("aid-introSeen", "1");
-      setStage("app");
+    /* successful login -> land on last visited view this role may access */
+    const enterApp = React.useCallback((session) => {
+      markIntroSeen();
+      let view = "overview";
+      try {
+        const saved = localStorage.getItem("aid-view");
+        if (saved && VIEW_HASH[saved] && AUTH.canAccess(session.role, saved)) view = saved;
+      } catch (e) { /* */ }
+      goto(VIEW_HASH[view] || "#/dashboard");
     }, []);
 
-    if (stage === "app") {
+    /* logout: clear token + role + cached auth state, back to access gate */
+    const handleLogout = React.useCallback(() => {
+      AUTH.logout("Signed out — session cleared.");
+      goto("#/access");
+    }, []);
+
+    if (route.kind === "app") {
       const App = window.AppMain;
-      return <App />;
+      return (
+        <App
+          view={route.view}
+          denied={route.denied}
+          session={route.session}
+          onNav={(key) => goto(VIEW_HASH[key] || "#/dashboard")}
+          onLogout={handleLogout}
+        />
+      );
     }
 
+    const stage = route.stage;
     return (
       <div className="entry">
-        {stage === "intro" && <Intro onDone={() => setStage("gate")} />}
-        {stage === "gate" && <RoleGate onChoose={(r) => setStage(r)} onReplay={() => setStage("intro")} />}
-        {stage === "student" && <StudentLogin onBack={() => setStage("gate")} onEnter={enterApp} />}
-        {stage === "admin" && <AdminLogin onBack={() => setStage("gate")} onEnter={enterApp} />}
+        {stage === "intro" && <Intro onDone={() => goto("#/access")} />}
+        {stage === "gate" && <RoleGate onChoose={(r) => goto(r === "admin" ? "#/admin/login" : "#/student/login")} onReplay={() => goto("#/")} />}
+        {stage === "student" && <StudentLogin onBack={() => goto("#/access")} onEnter={enterApp} />}
+        {stage === "admin" && <AdminLogin onBack={() => goto("#/access")} onEnter={enterApp} />}
       </div>
     );
   }

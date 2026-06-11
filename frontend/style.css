@@ -454,3 +454,107 @@ body {
   .insight { grid-template-columns: 1fr; }
   .cmp-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   WIRED-DATA COMPONENTS (real backend integration)
+   Appended for the live-data screens: loading / error states,
+   badges, the trend chart, the student drawer, the AI panel
+   and the cache-awareness strip. Uses existing design tokens.
+   ============================================================ */
+
+/* ---- async states ---------------------------------------------------- */
+.state-block {
+  display: flex; align-items: center; gap: 12px;
+  padding: 22px 20px; margin: 14px 0;
+  border: 1px solid var(--hair);
+  color: var(--ink-2); font-size: 14px;
+}
+.state-block.compact { padding: 12px 14px; margin: 8px 0; font-size: 13px; }
+.state-block.error { flex-direction: column; align-items: flex-start; gap: 10px; border-color: var(--accent); }
+.state-block .state-msg { color: var(--ink); font-weight: 600; }
+.state-block .state-code { font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em; }
+.state-spin {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--hair); border-top-color: var(--accent);
+  animation: aid-spin 0.7s linear infinite; flex: none;
+}
+@keyframes aid-spin { to { transform: rotate(360deg); } }
+
+.foot-note { margin-top: 16px; font-size: 11.5px; color: var(--ink-3); line-height: 1.5; max-width: 78ch; }
+
+/* ---- badges ---------------------------------------------------------- */
+.ui-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border: 1px solid var(--hair); border-radius: 2px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
+}
+.ui-badge.ok     { color: #0a7d3c; border-color: rgba(10,125,60,0.4);  background: rgba(10,125,60,0.07); }
+.ui-badge.bad    { color: var(--accent); border-color: var(--accent);  background: rgba(var(--ink-rgb),0.02); }
+.ui-badge.warn   { color: #9a6a00; border-color: rgba(154,106,0,0.4);  background: rgba(154,106,0,0.07); }
+.ui-badge.accent { color: var(--accent); border-color: rgba(var(--ink-rgb),0.2); }
+.ui-badge.muted  { color: var(--ink-3); }
+
+.btn.small { padding: 6px 12px; font-size: 12px; }
+
+/* ---- trend chart ----------------------------------------------------- */
+.trend-chart { display: block; width: 100%; height: auto; margin-top: 8px; }
+.tc-grid   { stroke: var(--hair); stroke-width: 1; }
+.tc-axis   { fill: var(--ink-3); font-size: 10px; }
+.tc-xaxis  { fill: var(--ink-3); font-size: 9px; }
+.tc-area   { fill: rgba(var(--ink-rgb), 0.05); stroke: none; }
+.tc-line   { fill: none; stroke: var(--accent); stroke-width: 2; }
+.tc-dot    { fill: var(--paper); stroke: var(--accent); stroke-width: 2; }
+
+/* ---- student detail drawer ------------------------------------------- */
+.sd-inner { display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+.sd-head  { padding: 24px 26px; border-bottom: 2px solid var(--ink); }
+.sd-head #sd-close { float: right; }
+.sd-name  { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 0.98; margin-top: 10px; }
+.sd-section { padding: 20px 26px; border-bottom: 1px solid var(--hair); }
+.sd-cta   { padding: 22px 26px; }
+.d-stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--hair); margin: 18px 26px; }
+.sd-section .d-stat-row, .d-stat-row + .d-stat-row { margin: 12px 0; }
+.d-stat   { padding: 14px 16px; border-right: 1px solid var(--hair); }
+.d-stat:last-child { border-right: none; }
+.d-stat-v { font-size: 26px; font-weight: 700; margin-top: 6px; }
+.d-stat-v.ok  { color: #0a7d3c; }
+.d-stat-v.bad { color: var(--accent); }
+.cell-label { display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+.cell-label span { color: var(--ink-3); font-weight: 400; }
+
+/* ---- AI insights panel ----------------------------------------------- */
+.ai-controls { display: flex; align-items: flex-end; gap: 16px; margin: 18px 0 24px; flex-wrap: wrap; }
+.ai-pick { display: flex; flex-direction: column; gap: 6px; }
+.ai-pick .fl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.ai-pick select {
+  padding: 9px 12px; border: 1px solid var(--ink); background: var(--paper);
+  color: var(--ink); font-size: 14px; min-width: 280px; font-family: inherit;
+}
+.ai-panel { display: flex; flex-direction: column; gap: 16px; }
+.ai-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+.ai-badges .ui-badge { font-size: 12px; padding: 5px 12px; }
+.ai-card { border: 1px solid var(--hair); padding: 18px 20px; }
+.ai-card-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; font-weight: 700; }
+.ai-card-label.ok  { color: #0a7d3c; }
+.ai-card-label.bad { color: var(--accent); }
+.ai-card-label.accent { color: var(--ink); }
+.ai-assessment { font-size: 16px; line-height: 1.55; color: var(--ink); max-width: 70ch; }
+.ai-item { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 9px 0; border-top: 1px solid var(--hair); font-size: 14px; color: var(--ink-2); }
+.ai-item:first-of-type { border-top: none; }
+.ai-item b { color: var(--accent); font-size: 12px; letter-spacing: 0.06em; }
+.ai-pattern { display: grid; grid-template-columns: auto auto 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--hair); font-size: 14px; }
+.ai-pattern:first-of-type { border-top: none; }
+.ai-scope { font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; }
+.ai-pattern-desc { color: var(--ink-2); }
+.ai-interventions { margin: 0; padding-left: 20px; }
+.ai-interventions li { padding: 6px 0; font-size: 14px; color: var(--ink); line-height: 1.5; }
+
+/* ---- cache-awareness strip ------------------------------------------- */
+.cache-strip {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding: 12px 16px; border: 1px solid var(--hair); background: rgba(var(--ink-rgb), 0.015);
+}
+.cache-strip .cs-item { font-size: 11.5px; color: var(--ink-3); letter-spacing: 0.03em; }
+.cache-strip .cs-item b { color: var(--ink-2); font-weight: 700; }

@@ -268,3 +268,130 @@
   .intro-kicker, .intro-meta { opacity: 1 !important; }
   .grid-distort, .type-bg, .atmos, .scroll-type-layer { display: none; }
 }
+
+/* ============================================================
+   AUTH STATES — feedback lines, guard notices, 403, sign out.
+   (Stabilization sprint: states only, same visual vocabulary.)
+   ============================================================ */
+.auth-msg {
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.5;
+  padding: 10px 14px; border: 1px solid var(--hair-2); color: var(--ink-2);
+  display: flex; align-items: center; gap: 10px;
+}
+.auth-msg::before { content: ""; width: 8px; height: 8px; flex: none; background: var(--ink-3); }
+.auth-msg.error { color: var(--accent); border-color: var(--accent); }
+.auth-msg.error::before { background: var(--accent); }
+.auth-msg.ok { color: var(--ink); border-color: var(--ink); }
+.auth-msg.ok::before { background: var(--ink); }
+
+/* one-shot notice strip on the role gate (expiry / signout reasons) */
+.entry-notice { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 6; }
+.entry-notice .auth-msg { background: var(--paper); }
+
+/* in-flight forms: hold position, signal state */
+.auth-submit[disabled], .auth-demo[disabled] { opacity: 0.55; pointer-events: none; }
+
+/* masthead: session identity + sign out */
+.theme-toggle.signout { background: none; color: var(--ink); border-left: 1px solid var(--hair); }
+.theme-toggle.signout .dot { background: var(--ink-3); }
+.theme-toggle.signout:hover { background: var(--accent); color: var(--accent-ink); }
+.theme-toggle.signout:hover .dot { background: var(--accent-ink); }
+
+/* 403 — admin-only view reached with a student session */
+.forbidden {
+  min-height: 56vh; display: flex; flex-direction: column; justify-content: center;
+  align-items: flex-start; gap: var(--s3); max-width: 60ch;
+}
+.forbidden .f-code {
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent);
+}
+.forbidden h2 {
+  font-weight: 700; letter-spacing: -0.04em; line-height: 0.88;
+  text-transform: lowercase; font-size: clamp(40px, 5.4vw, 84px);
+}
+.forbidden p { font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.forbidden .f-back {
+  margin-top: var(--s2); display: inline-flex; align-items: center; gap: 12px;
+  font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 14px 20px; border: 1px solid var(--ink);
+  background: var(--ink); color: var(--paper); cursor: pointer;
+}
+.forbidden .f-back span { transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.forbidden .f-back:hover span { transform: translateX(6px); }
+
+/* ============================================================
+   RUBE GOLDBERG LOGIN MACHINE (login-completion sprint)
+   Geometry contract with login-machine.js — do not resize the
+   form rows: 270px wide, four 60px rows, form + 1000×1000 SVG
+   centred on the same 0×0 anchor (mirrors the reference layout).
+   ============================================================ */
+.rg-msgs { display: grid; gap: 8px; min-height: 38px; align-content: start; }
+.rg-hint {
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-3); padding: 12px 0 0;
+}
+
+.rg-stage { position: relative; flex: 1; min-height: 320px; }
+.auth.admin .rg-stage { min-height: 380px; }
+.rg-anchor { position: absolute; top: 42%; left: 50%; width: 0; height: 0; }
+
+/* contraption layer — above the form (pull line crosses the button),
+   never interactive */
+.rg-svg {
+  position: absolute; top: 0; left: 0; transform: translate(-50%, -50%);
+  width: 1000px; height: 1000px; pointer-events: none; z-index: 2;
+}
+.rg-svg svg {
+  display: block; width: 1000px; height: 1000px;
+  stroke: #11120E; stroke-width: 1.2px; fill: none;
+}
+/* dark grounds — admin mission-control, or the app's dark theme —
+   invert the ink drawing (strokes go light, masking fills go near-ground) */
+.auth.admin .rg-svg svg,
+html[data-theme="dark"] .rg-svg svg { filter: invert(1); }
+
+/* the form object the machine acts on */
+.rg-form { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); width: 270px; z-index: 1; }
+.rg-row { width: 100%; height: 60px; display: flex; align-items: center; }
+.rg-input {
+  width: 100%; height: 36px; padding: 0 12px;
+  background: var(--paper); border: 1px solid var(--hair-2); color: var(--ink);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px; letter-spacing: 0.04em; outline: none; border-radius: 0;
+}
+.rg-input::placeholder {
+  color: var(--ink-3); opacity: 0.8; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.rg-input:focus { border-color: var(--ink-2); }
+.rg-input.valid { border-color: var(--ink); }
+.rg-check {
+  gap: 10px; font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+}
+.rg-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
+.rg-submit {
+  width: 100%; height: 40px; border: 1px solid var(--ink); background: var(--paper);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: none; border-radius: 0; appearance: none; -webkit-appearance: none;
+}
+.rg-input[disabled], .rg-check input[disabled] { opacity: 0.55; }
+
+/* ---- no-machine fallback: narrow viewports / reduced motion.
+   The engine goes inert in these conditions (applies no transforms);
+   !important also rescues any inline GSAP state if the viewport
+   shrinks mid-session — the submit button must never be stranded
+   rotated off-axis. ---- */
+@media (max-width: 700px), (prefers-reduced-motion: reduce) {
+  .rg-svg { display: none; }
+  .rg-stage { flex: none; min-height: 0; }
+  .auth.admin .rg-stage { min-height: 0; }
+  .rg-anchor { position: static; width: auto; height: auto; transform: none !important; }
+  .rg-form { position: static; transform: none !important; width: 100%; }
+  .rg-row { height: auto; margin-bottom: var(--s3); }
+  .rg-submit { transform: none !important; color: var(--ink) !important; }
+}

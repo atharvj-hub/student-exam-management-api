@@ -4,15 +4,12 @@
    ============================================================ */
 (function () {
   const { AppCtx } = window;
+  const AUTH = window.AUTH;
 
   const NAV = [
-    ["overview", "Overview"],
-    ["dashboard", "Analytics"],
+    ["overview", "Dashboard"],
     ["students", "Students"],
-    ["subjects", "Subjects"],
     ["insights", "AI Insights"],
-    ["atRisk", "At-Risk"],
-    ["comparison", "Comparison"],
   ];
 
   /* ---- clock (isolated so its 1s tick never re-renders the views) ------- */
@@ -28,7 +25,8 @@
   }
 
   /* ---- masthead --------------------------------------------------------- */
-  function Masthead({ theme, onToggleTheme }) {
+  function Masthead({ theme, onToggleTheme, session, onLogout }) {
+    const user = session && session.user;
     return (
       <header className="masthead">
         <div className="mast-brand" data-magnetic="0.2">
@@ -36,22 +34,29 @@
           <div className="mast-title">Academic Intelligence<span>Performance system · 2026·S</span></div>
         </div>
         <div className="mast-meta">
+          {user && (
+            <div className="mast-clock mast-id"><span>{session.role === "admin" ? "Operator" : "Student"}</span><b className="num">{user.id}</b></div>
+          )}
           <div className="mast-clock"><span>Local</span><Clock /></div>
           <button className="theme-toggle" data-magnetic="0.3" onClick={onToggleTheme}>
             <span className="dot"></span><span className="tlabel" data-magnetic-label>{theme === "dark" ? "Light" : "Dark"}</span>
+          </button>
+          <button className="theme-toggle signout" data-magnetic="0.3" onClick={onLogout}>
+            <span className="dot"></span><span className="tlabel" data-magnetic-label>Sign out</span>
           </button>
         </div>
       </header>
     );
   }
 
-  /* ---- left rail nav ---------------------------------------------------- */
-  function Rail({ current, onNav }) {
+  /* ---- left rail nav (scoped to the session's role) ---------------------- */
+  function Rail({ current, onNav, role }) {
+    const items = NAV.filter(([key]) => AUTH.canAccess(role, key));
     return (
       <aside className="rail">
-        <div className="rail-num">Index · 07 views</div>
+        <div className="rail-num">Index · {String(items.length).padStart(2, "0")} views</div>
         <nav className="nav">
-          {NAV.map(([key, label], i) => (
+          {items.map(([key, label], i) => (
             <button className="nav-item" key={key} data-dir-aware aria-current={current === key} onClick={() => onNav(key)}>
               <span className="nav-idx">{String(i + 1).padStart(2, "0")}</span>
               <span className="nav-label" data-magnetic-label>{label}</span>
@@ -71,12 +76,9 @@
      PASS RATE · RISK INDEX. Overview is a full-bleed poster (no scroll)
      so it is intentionally excluded. */
   const SCROLL_WORDS = {
-    dashboard: [["analytics", "33%", { left: "-2%" }], ["pass rate", "71%", { right: "-2%" }]],
+    overview: [["dashboard", "33%", { left: "-2%" }], ["pass rate", "71%", { right: "-2%" }]],
     insights: [["ai insights", "46%", { left: "-2%" }]],
-    atRisk: [["risk index", "42%", { right: "-2%" }]],
     students: [["performance", "56%", { left: "-2%" }]],
-    comparison: [["performance", "54%", { right: "-2%" }]],
-    subjects: [["analytics", "52%", { left: "-2%" }]],
   };
   function ScrollTypeLayer({ view }) {
     const items = SCROLL_WORDS[view];
@@ -92,27 +94,40 @@
 
   /* ---- app -------------------------------------------------------------- */
   const VIEWS = {
-    overview: window.Overview,
-    dashboard: window.Dashboard,
+    overview: window.Dashboard,
     students: window.Students,
-    subjects: window.Subjects,
     insights: window.Insights,
-    atRisk: window.AtRisk,
-    comparison: window.Comparison,
   };
 
-  function App() {
-    const [current, setCurrent] = React.useState(() => localStorage.getItem("aid-view") || "overview");
+  /* ---- 403 — role does not include this console area --------------------- */
+  const NAV_LABELS = Object.fromEntries(NAV);
+  function Forbidden({ denied, role, onNav }) {
+    return (
+      <div className="forbidden" data-screen-label="403 Forbidden">
+        <span className="f-code">403 · Forbidden</span>
+        <h2>operator clearance<br />required</h2>
+        <p>
+          {NAV_LABELS[denied] ? "“" + NAV_LABELS[denied] + "”" : "This area"} is restricted to administrator
+          sessions. Your {role} access covers personal performance views only — your record, analytics,
+          subjects and results.
+        </p>
+        <button className="f-back" onClick={() => onNav("overview")}>Back to overview <span>→</span></button>
+      </div>
+    );
+  }
+
+  function App({ view, denied, session, onNav, onLogout }) {
+    const role = session ? session.role : "student";
     const [theme, setTheme] = React.useState(() => localStorage.getItem("aid-theme") || "light");
     const [selected, setSelected] = React.useState(null);
     const lastId = React.useRef(null);
     const rootRef = React.useRef(null);
 
-    /* navigation + drawer actions */
+    /* navigation + drawer actions (route changes live in the URL hash) */
     const nav = React.useCallback((key) => {
-      setSelected((cur) => (cur ? null : cur));
-      setCurrent((cur) => (key === cur ? cur : key));
-    }, []);
+      setSelected(null);
+      onNav(key);
+    }, [onNav]);
     const openStudent = React.useCallback((id) => { lastId.current = id; setSelected(id); }, []);
     const closeStudent = React.useCallback(() => setSelected(null), []);
     const ctx = React.useMemo(() => ({ nav, openStudent }), [nav, openStudent]);
@@ -132,7 +147,7 @@
 
     /* per-view: persist, scroll to top, restart entrance, rescan motion */
     React.useEffect(() => {
-      localStorage.setItem("aid-view", current);
+      if (view !== "forbidden") localStorage.setItem("aid-view", view);
       const root = rootRef.current;
       if (root) {
         root.classList.remove("entering");
@@ -154,7 +169,7 @@
           .forEach((el) => el.setAttribute("data-scroll-type", ""));
         window.MOTION.scan(document);
       }
-    }, [current]);
+    }, [view]);
 
     /* drawer: rescan motion when a student record opens */
     React.useEffect(() => {
@@ -164,22 +179,24 @@
       }
     }, [selected]);
 
-    const View = VIEWS[current] || VIEWS.overview;
+    const View = view === "forbidden" ? null : (VIEWS[view] || VIEWS.overview);
     const detailId = selected || lastId.current;
 
     return (
       <AppCtx.Provider value={ctx}>
         <div id="app">
-          <Masthead theme={theme} onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")} />
+          <Masthead theme={theme} onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")} session={session} onLogout={onLogout} />
           <div className="shell">
-            <Rail current={current} onNav={nav} />
+            <Rail current={view} onNav={nav} role={role} />
             <main className="canvas">
               <div id="view-root" className="view is-active entering" ref={rootRef}>
-                <ScrollTypeLayer view={current} />
-                <div className="view-content"><View /></div>
+                <ScrollTypeLayer view={view} />
+                <div className="view-content">
+                  {View ? <View /> : <Forbidden denied={denied} role={role} onNav={nav} />}
+                </div>
               </div>
               <footer className="foot">
-                <div>100 students · 2 sections<br />6 subjects · 18 exams</div>
+                <div>Live data · Spring Boot API<br />JWT · AOP audit · AI insights</div>
               </footer>
             </main>
           </div>
