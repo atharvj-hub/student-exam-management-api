@@ -166,6 +166,48 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // ─── 503 Service Unavailable — AI provider unreachable ───────────────────
+    @ExceptionHandler(AiProviderUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleAiProviderUnavailable(AiProviderUnavailableException ex) {
+        log.error("AI provider unavailable: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
+            ApiErrorResponse.builder()
+                .status(503)
+                .error("AI_PROVIDER_UNAVAILABLE")
+                .message("The AI provider is currently unavailable. Please try again later.")
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
+    // ─── 502 Bad Gateway — AI returned unusable response ─────────────────────
+    @ExceptionHandler(AiAnalysisException.class)
+    public ResponseEntity<ApiErrorResponse> handleAiAnalysis(AiAnalysisException ex) {
+        log.error("AI analysis failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(
+            ApiErrorResponse.builder()
+                .status(502)
+                .error("AI_ANALYSIS_FAILED")
+                .message("The AI analysis could not be completed. The provider returned an unusable response.")
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
+    // ─── 429 Too Many Requests — rate limit exceeded ──────────────────────────
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleRateLimit(RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
+            ApiErrorResponse.builder()
+                .status(429)
+                .error("RATE_LIMIT_EXCEEDED")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build()
+        );
+    }
+
     /**
      * ─── 500 Internal Server Error — Catch-All ───────────────────────────────
      */

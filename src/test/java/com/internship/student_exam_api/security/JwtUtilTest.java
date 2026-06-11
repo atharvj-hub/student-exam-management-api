@@ -88,14 +88,14 @@ class JwtUtilTest {
     class AdminPermissionTests {
 
         @Test
-        @DisplayName("ADMIN token should contain exactly all 15 permissions")
+        @DisplayName("ADMIN token should contain exactly all 16 permissions")
         void adminTokenShouldContainExactlyAllPermissions() {
             AppUserDetails admin = makeUserDetails("admin@school.com", Role.ADMIN);
             String token = jwtUtil.generateToken(admin);
 
             Set<Permission> perms = jwtUtil.extractPermissions(token);
 
-            assertEquals(15, perms.size());
+            assertEquals(16, perms.size());
             assertEquals(EnumSet.allOf(Permission.class), perms);
         }
 

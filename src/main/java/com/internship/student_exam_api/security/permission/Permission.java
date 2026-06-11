@@ -23,6 +23,9 @@ public enum Permission {
     RESULT_CREATE,
     RESULT_UPDATE,
 
+    // Analytics
+    ANALYTICS_VIEW,
+
     // AI analytics
     AI_INSIGHTS_VIEW
 }

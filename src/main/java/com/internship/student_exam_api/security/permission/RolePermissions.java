@@ -23,6 +23,7 @@ public final class RolePermissions {
         Permission.RESULT_VIEW,
         Permission.RESULT_CREATE,
         Permission.RESULT_UPDATE,
+        Permission.ANALYTICS_VIEW,
         Permission.AI_INSIGHTS_VIEW
     );
 
